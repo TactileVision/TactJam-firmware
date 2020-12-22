@@ -7,6 +7,27 @@ TactJam is a collaborative playground for composing spatial tactons. The project
 + GUI client to view and edit tactons: [https://github.com/TactileVision/TactJam-client](https://github.com/TactileVision/TactJam-client)
 + Server to store and manage tactons: [https://github.com/TactileVision/TactJam-server](https://github.com/TactileVision/TactJam-server)
 
+If you are looking for the software that drives the device, you have come to the right place. Here you find the firmware and a test suite to run isolated tests for several hardware and software components.
+
+
+## How to build and develop the firmware
+
+The TactJam hardware is based on the [ESP32 MCU by Espressif](https://www.espressif.com/en/products/socs/esp32/overview). To simplify the embedded development we use [PlatformIO](https://platformio.org/). For the sake of convience the code editor [VSCodium](https://vscodium.com/) offers a package for PlatformIO. Please refer to the [installation guide](https://docs.platformio.org/en/latest/integration/ide/vscode.html#installation) for details. Of course you can also use other editors (see the [list of supported editors](https://docs.platformio.org/en/latest/integration/ide/index.html#desktop-ide)), or use only the [CLI](https://docs.platformio.org/en/latest/core/index.html).
+
+
+### Configuration
+
+The build configuration of the PlatformIO project is stored in the _platformio.ini_ (see below). Please change the `upload_port` to the correct port of your ESP and the `monitor_speed` according to your needs.
+
+```
+[env:tactjam]
+platform = espressif32
+board = esp32dev
+framework = arduino
+upload_port = /dev/cu.SLAB_USBtoUART
+monitor_speed = 115200
+```
+
 
 ## How to contribute
 
