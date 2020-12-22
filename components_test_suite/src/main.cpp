@@ -6,13 +6,13 @@
 //#define TACTJAM_TEST_I2CSCAN
 //#define TACTJAM_TEST_OLED
 //#define TACTJAM_TEST_BUZZER
-#define TACTJAM_TEST_SIPO
-#define TACTJAM_TEST_PISO
+//#define TACTJAM_TEST_SIPO
+//#define TACTJAM_TEST_PISO
 //#define TACTJAM_TEXT_PWMMULTIPLEXER
 //#define TACTJAM_TEST_LIN_ENCODER
 //#define TACTJAM_TEST_DECODE_VTP
 //#define TACTJAM_TEST_VTP_PLAYER
-//#define TACTJAM_TEST_VTP_SAMPLER
+#define TACTJAM_TEST_VTP_SAMPLER
 
 
 
@@ -62,7 +62,7 @@ tactjam::data_format::VTPPlayer vtp_player(20);
 #include "data_format/vtpSampler.h"
 tactjam::data_format::VTPSampler vtp_sampler(20);
 #include "linEncoder.h"
-tactjam::encoder::LinEncoder sampler_poti(12, 30);
+tactjam::encoder::LinEncoder sampler_poti(15, 30);
 #include "shiftregisterPISO.h"
 tactjam::shiftregister::piso::M74HC166 sampler_buttons;
 #include "shiftRegisterSIPO.h"
@@ -103,7 +103,7 @@ void setup() {
 #ifdef TACTJAM_TEST_SIPO
   Serial.println("\tShift Registers (SIPO)");
   led_shiftregister.Initialize();
-  //led_shiftregister.Test();
+  led_shiftregister.Test();
 #endif
 #ifdef TACTJAM_TEST_PISO
   Serial.println("\tShift Registers (PISO)");
@@ -141,7 +141,7 @@ void setup() {
   sampler_leds.Initialize();
   sampler_actuators.Initialize();
   vtp_sampler.SetAmplitude(sampler_poti.Get12bit());
-  vtp_sampler.SetActiveButtons(uint8_t(sampler_buttons.Read16() >> 8));
+  vtp_sampler.SetActiveButtons(uint8_t(sampler_buttons.Read() >> 8));
 #endif
 }
 
@@ -179,7 +179,7 @@ void loop() {
     Serial.print("activeActuatorButtons BIN: ");
     Serial.println(activeActuatorButtons, BIN);
   }
-  uint8_t activeMenuButtons = (activeButtons >> 5) & 0xF;
+  uint8_t activeMenuButtons = (activeButtons >> 5) & 0x7;
   if (activeMenuButtons != 0) {
     Serial.print("activeMenuButtons DEC: ");
     Serial.println(activeMenuButtons, DEC);
@@ -191,9 +191,12 @@ void loop() {
 #endif
 
 #ifdef TACTJAM_TEXT_PWMMULTIPLEXER
-  actuators.Update(activeButtons);
+#ifdef TACTJAM_TEST_LIN_ENCODER
+  actuators.Update(activeActuatorButtons, intensity_encoder.Get12bit());
+#else
+  actuators.Update(activeActuatorButtons);
+#endif //TACTJAM_TEST_LIN_ENCODER
 #endif //TACTJAM_TEXT_PWMMULTIPLEXER
-
 #endif //TACTJAM_TEST_PISO
 
 #ifdef TACTJAM_TEST_LIN_ENCODER
@@ -218,10 +221,13 @@ void loop() {
 #endif
 
 #ifdef TACTJAM_TEST_VTP_SAMPLER
+  auto active_buttons = uint8_t(sampler_buttons.Read() >> 8);
   if (sampler_poti.UpdateAvailable()) {
-    vtp_sampler.SetAmplitude(sampler_poti.Get12bit());
+    auto amp = sampler_poti.Get12bit();
+    vtp_sampler.SetAmplitude(amp);
+    vtp_sampler.WriteGlobalAmplitude();
+    sampler_actuators.Update(active_buttons, amp);
   }
-  auto active_buttons = uint8_t(sampler_buttons.Read16() >> 8);
   if (vtp_sampler.UpdateAvailable(active_buttons)) {
     sampler_actuators.Update(active_buttons, sampler_poti.Get12bit());
     sampler_leds.Update(active_buttons);

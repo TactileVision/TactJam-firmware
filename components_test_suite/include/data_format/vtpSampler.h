@@ -79,6 +79,47 @@ public:
     return (active_buttons_ != active_buttons);
   }
 
+  void WriteGlobalAmplitude() {
+    if (!initialized_) {
+      Initialize();
+    }
+    if (active_buttons_ == 0) {
+      return;
+    }
+    if (time_elapsed_ - time_last_write_ > 1023) {
+      Serial.println("increment time");
+      VTPInstructionV1 instruction;
+      instruction.code = VTP_INST_INCREMENT_TIME;
+      instruction.params.format_a.parameter_a = time_elapsed_ - time_last_write_;
+      EncodeAndAddInstruction(&instruction);
+    }
+
+    auto mapped_amplitude = (uint32_t)map(amplitude_, 0, 4095, 0, 1023);
+    if (active_buttons_ == 0xFF) {
+      Serial.printf("all:%d\t", mapped_amplitude);
+      VTPInstructionV1 instruction;
+      instruction.code = VTP_INST_SET_AMPLITUDE;
+      instruction.params.format_b.channel_select = 0;
+      instruction.params.format_b.time_offset = time_elapsed_ - time_last_write_;
+      instruction.params.format_b.parameter_a = mapped_amplitude;
+      EncodeAndAddInstruction(&instruction);
+    }
+    else {
+      for (uint8_t i = 0; i < 8; i++) {
+        auto last_state = bitRead(active_buttons_, i);
+        if (last_state == 1) {
+          Serial.printf("%d:%d\t", i, mapped_amplitude);
+          VTPInstructionV1 instruction;
+          instruction.code = VTP_INST_SET_AMPLITUDE;
+          instruction.params.format_b.channel_select = i;
+          instruction.params.format_b.time_offset = time_elapsed_ - time_last_write_;
+          instruction.params.format_b.parameter_a = mapped_amplitude;
+          EncodeAndAddInstruction(&instruction);
+        }
+      }
+    }
+  }
+
   void WriteSample(uint8_t active_buttons) {
     if (!initialized_) {
       Initialize();
@@ -90,18 +131,31 @@ public:
       instruction.params.format_a.parameter_a = time_elapsed_ - time_last_write_;
       EncodeAndAddInstruction(&instruction);
     }
-    for (uint8_t i = 0; i < 8; i++) {
-      auto last_state = bitRead(active_buttons_, i);
-      auto new_state = bitRead(active_buttons, i);
-      if (last_state != new_state) {
-        uint32_t new_amplitude = (new_state == 1) ? map(amplitude_, 0, 4095, 0, 1023) : 0;
-        Serial.printf("%d:%d\t", i, new_amplitude);
-        VTPInstructionV1 instruction;
-        instruction.code = VTP_INST_SET_AMPLITUDE;
-        instruction.params.format_b.channel_select = i;
-        instruction.params.format_b.time_offset = time_elapsed_ - time_last_write_;
-        instruction.params.format_b.parameter_a = new_amplitude;
-        EncodeAndAddInstruction(&instruction);
+
+    auto mapped_amplitude = (uint32_t)map(amplitude_, 0, 4095, 0, 1023);
+    if (active_buttons_ == 0xFF) {
+      Serial.printf("all:%d\t", mapped_amplitude);
+      VTPInstructionV1 instruction;
+      instruction.code = VTP_INST_SET_AMPLITUDE;
+      instruction.params.format_b.channel_select = 0;
+      instruction.params.format_b.time_offset = time_elapsed_ - time_last_write_;
+      instruction.params.format_b.parameter_a = mapped_amplitude;
+      EncodeAndAddInstruction(&instruction);
+    }
+    else {
+      for (uint8_t i = 0; i < 8; i++) {
+        auto last_state = bitRead(active_buttons_, i);
+        auto new_state = bitRead(active_buttons, i);
+        if (last_state != new_state) {
+          uint32_t new_amplitude = (new_state == 1) ? mapped_amplitude : 0;
+          Serial.printf("%d:%d\t", i, new_amplitude);
+          VTPInstructionV1 instruction;
+          instruction.code = VTP_INST_SET_AMPLITUDE;
+          instruction.params.format_b.channel_select = i;
+          instruction.params.format_b.time_offset = time_elapsed_ - time_last_write_;
+          instruction.params.format_b.parameter_a = new_amplitude;
+          EncodeAndAddInstruction(&instruction);
+        }
       }
     }
     active_buttons_ = active_buttons;
