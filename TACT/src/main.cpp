@@ -30,9 +30,9 @@ void setup() {
 
 
 void loop() {
-  delay(3000);
+  delay(1000);
   static uint32_t i = 0;
-  display.UpdateAmplitude(++i%256);
-  display.UpdateSlotSelection(i%3);
-  display.UpdateModeSelection((i%10 == 0) ? "jam" : "rec");
+  display.DrawAmplitude(++i%256);
+  display.DrawSlotSelection(i%3);
+  display.DrawModeSelection((i%10 == 0) ? "jam" : "rec");
 }
