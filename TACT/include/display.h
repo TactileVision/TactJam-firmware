@@ -55,9 +55,12 @@ class Display {
     const int16_t kContentCenterX = 64;
     const int16_t kContentCenterY = (kContentHeight/2)+kContentOffsetTop;
 
-    void UpdateStatusBar();
+    void UpdateStatusBar(const String& mode, const uint8_t slot, const uint8_t amplitude);
     void UpdateStatusValue(const String& value, int16_t x, int16_t y, int16_t width);
     void UpdateStatusPair(const String& title, int16_t title_width, const String& value, int16_t value_width, int16_t x, int16_t y);
+    void DrawPlayIcon();
+    void DrawRecordIcon();
+    void DrawTransferIcon();
     void DrawContentBorder();
     void ClearContent();
 
@@ -67,7 +70,7 @@ class Display {
 
     bool Initialize();
     void DrawBootScreen();
-    void DrawMenuScreen();
+    void DrawMenuScreen(const String& mode, const uint8_t slot, const uint8_t amplitude);
     void DrawModeSelection(const String& mode);
     void DrawSlotSelection(uint8_t slot);
     void DrawAmplitude(uint8_t amplitude_perc);

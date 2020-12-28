@@ -41,13 +41,13 @@ void Display::DrawBootScreen() {
 }
 
 
-void Display::DrawMenuScreen() {
+void Display::DrawMenuScreen(const String& mode, const uint8_t slot, const uint8_t amplitude) {
   if (!initialized_ && !Initialize()) {
     return;
   }
   SSD1306_->clearDisplay();
   SSD1306_->invertDisplay(false);
-  UpdateStatusBar();
+  UpdateStatusBar(mode, slot, amplitude);
   DrawContentBorder();
   ClearContent();
   SSD1306_->display();
@@ -117,11 +117,10 @@ void Display::DrawTactonDetails(const uint8_t slot, const String& uuid, uint32_t
 }
 
 
-void Display::UpdateStatusBar() {
-  // [TODO] remove magic value strings
-  UpdateStatusPair(kModeTitle, kModeTitleWidth, "jam", kModeValueWidth, kModeTitleX, kStatusBarY);
-  UpdateStatusPair(kSlotTitle, kSlotTitleWidth, "1", kSlotValueWidth, kSlotTitleX, kStatusBarY);
-  UpdateStatusPair(kAmplitudeTitle, kAmplitudeTitleWidth, "100%", kAmplitudeValueWidth, kAmplitudeTitleX, kStatusBarY);
+void Display::UpdateStatusBar(const String& mode, const uint8_t slot, const uint8_t amplitude) {
+  UpdateStatusPair(kModeTitle, kModeTitleWidth, mode, kModeValueWidth, kModeTitleX, kStatusBarY);
+  UpdateStatusPair(kSlotTitle, kSlotTitleWidth, String(slot), kSlotValueWidth, kSlotTitleX, kStatusBarY);
+  UpdateStatusPair(kAmplitudeTitle, kAmplitudeTitleWidth, String(amplitude) + "%", kAmplitudeValueWidth, kAmplitudeTitleX, kStatusBarY);
 }
 
 

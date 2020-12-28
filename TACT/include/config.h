@@ -14,8 +14,12 @@ namespace config {
   const auto debug_level = (TACT_DEBUG == 1) ? DebugLevel::basic : DebugLevel::verbose;
   #endif //TACT_DEBUG
 
+  const uint8_t initialization_delay = 20;
+
   // ESP pin setup
   const uint8_t ESP_pin_linear_encoder = 15;
+  const uint8_t ESP_pin_mode_encoder = 13;
+  const uint8_t ESP_pin_slot_encoder = 12;
 
 }
 }
