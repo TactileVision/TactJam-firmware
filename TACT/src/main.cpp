@@ -3,9 +3,11 @@
 
 #include "config.h"
 #include "display.h"
+#include "linearEncoder.h"
 
 
 tact::Display display;
+tact::LinearEncoder amplitude_encoder(tact::config::ESP_pin_linear_encoder);
 
 
 void setup() {
@@ -17,6 +19,8 @@ void setup() {
   #ifdef TACT_DEBUG
   Serial.printf("TactJam (TACT v%s-%s)\n", TACT_VERSION, GIT_REV);
   #endif //TACT_DEBUG
+
+  amplitude_encoder.Initialize();
 
   if (!display.Initialize()) {
     #ifdef TACT_DEBUG
@@ -34,9 +38,15 @@ void setup() {
 
 
 void loop() {
+  /*
   delay(1000);
   static uint32_t i = 0;
   display.DrawAmplitude(++i%256);
   display.DrawSlotSelection(i%3);
   display.DrawModeSelection((i%10 == 0) ? "jam" : "rec");
+  */
+  if (amplitude_encoder.UpdateAvailable()) {
+    display.DrawAmplitude(amplitude_encoder.GetPercent());
+  }
+  delay(20);
 }

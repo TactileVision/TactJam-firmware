@@ -14,6 +14,9 @@ namespace config {
   const auto debug_level = (TACT_DEBUG == 1) ? DebugLevel::basic : DebugLevel::verbose;
   #endif //TACT_DEBUG
 
+  // ESP pin setup
+  const uint8_t ESP_pin_linear_encoder = 15;
+
 }
 }
 
