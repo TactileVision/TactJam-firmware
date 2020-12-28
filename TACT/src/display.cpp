@@ -48,7 +48,8 @@ void Display::DrawMenuScreen() {
   SSD1306_->clearDisplay();
   SSD1306_->invertDisplay(false);
   UpdateStatusBar();
-  SSD1306_->drawRect(0, kLineHeight + kSpacing, kWidth, 64-12, SSD1306_WHITE);
+  DrawContentBorder();
+  ClearContent();
   SSD1306_->display();
 }
 
@@ -80,6 +81,42 @@ void Display::DrawAmplitude(uint8_t amplitude_perc) {
 }
 
 
+void Display::DrawContentTeaser(const String& text) {
+  if (!initialized_ && !Initialize()) {
+    return;
+  }
+  ClearContent();
+  SSD1306_->invertDisplay(false);
+  SSD1306_->setTextColor(SSD1306_WHITE);
+  SSD1306_->setTextSize(2);
+  int16_t x = kContentSpacing;
+  auto text_width = text.length() * kCharWidth * 2;
+  if (text_width < kContentWidth) {
+    x = (kWidth - text_width) / 2;
+  }
+  SSD1306_->setCursor(x, kContentOffsetTop);
+  SSD1306_->println(text);
+  SSD1306_->display();
+}
+
+
+void Display::DrawTactonDetails(const uint8_t slot, const String& uuid, uint32_t instruction_size, uint64_t length_millis) {
+  ClearContent();
+  SSD1306_->setTextColor(SSD1306_WHITE);
+  SSD1306_->setTextSize(1);
+  SSD1306_->setCursor(kContentSpacing, kContentOffsetTop);
+  SSD1306_->printf("slot:         %u\n", slot);
+  SSD1306_->setCursor(kContentSpacing, SSD1306_->getCursorY()+kSpacing);
+  SSD1306_->printf("uuid:         %s\n", uuid);
+  SSD1306_->setCursor(kContentSpacing, SSD1306_->getCursorY()+kSpacing);
+  SSD1306_->printf("instructions: %u\n", instruction_size);
+  SSD1306_->setCursor(kContentSpacing, SSD1306_->getCursorY()+kSpacing);
+  SSD1306_->printf("length (ms):  %u\n", length_millis);
+  SSD1306_->setCursor(kContentSpacing, SSD1306_->getCursorY()+kSpacing);
+  SSD1306_->printf("length (s):   %u\n", length_millis/1000);
+}
+
+
 void Display::UpdateStatusBar() {
   // [TODO] remove magic value strings
   UpdateStatusPair(kModeTitle, kModeTitleWidth, "jam", kModeValueWidth, kModeTitleX, kStatusBarY);
@@ -101,10 +138,21 @@ void Display::UpdateStatusPair(const String& title, int16_t title_width, const S
 
 
 void Display::UpdateStatusValue(const String& value, int16_t x, int16_t y, int16_t width) {
+  SSD1306_->setTextSize(1);
   SSD1306_->fillRect(x, y, width, kLineHeight, SSD1306_WHITE);
   SSD1306_->setTextColor(SSD1306_BLACK);
   SSD1306_->setCursor(x + kSpacing, y + kTextOffsetTop);
   SSD1306_->println(value);
+}
+
+
+void Display::DrawContentBorder() {
+  SSD1306_->drawRect(0, kLineHeight+kSpacing, kWidth, kHeight-(kLineHeight+kSpacing), SSD1306_WHITE);
+}
+
+
+void Display::ClearContent() {
+  SSD1306_->fillRect(kContentSpacing, kContentOffsetTop, kContentWidth, kContentHeight, SSD1306_BLACK);
 }
 
 }

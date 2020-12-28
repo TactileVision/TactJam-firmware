@@ -24,8 +24,12 @@ void setup() {
     #endif //TACT_DEBUG
   }
   display.DrawBootScreen();
-  delay(4000);
+  delay(2000);
   display.DrawMenuScreen();
+  delay(1000);
+  display.DrawContentTeaser("TactJam");
+  delay(1000);
+  display.DrawTactonDetails(1, "0xF00", 42, 20000U);
 }
 
 

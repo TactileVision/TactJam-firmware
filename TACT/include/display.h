@@ -47,11 +47,19 @@ class Display {
     const int16_t kAmplitudeValueWidth = kAmplitudeValueLength * kCharWidth + kTextOffsetLeft + kTextOffsetRight;
     const int16_t kAmplitudeTitleX = 92;
     const int16_t kAmplitudeValueX = kAmplitudeTitleX + kAmplitudeTitleWidth;
+    // content screen constants
+    const int16_t kContentSpacing = 4;
+    const int16_t kContentOffsetTop = kLineHeight+kSpacing+kContentSpacing;
+    const int16_t kContentWidth = 120;
+    const int16_t kContentHeight = 44;
+    const int16_t kContentCenterX = 64;
+    const int16_t kContentCenterY = (kContentHeight/2)+kContentOffsetTop;
 
     void UpdateStatusBar();
     void UpdateStatusValue(const String& value, int16_t x, int16_t y, int16_t width);
     void UpdateStatusPair(const String& title, int16_t title_width, const String& value, int16_t value_width, int16_t x, int16_t y);
-
+    void DrawContentBorder();
+    void ClearContent();
 
   public:
     Display();
@@ -63,6 +71,8 @@ class Display {
     void DrawModeSelection(const String& mode);
     void DrawSlotSelection(uint8_t slot);
     void DrawAmplitude(uint8_t amplitude_perc);
+    void DrawContentTeaser(const String& text);
+    void DrawTactonDetails(const uint8_t slot, const String& uuid, uint32_t instruction_size, uint64_t length_millis);
 
 };
 
