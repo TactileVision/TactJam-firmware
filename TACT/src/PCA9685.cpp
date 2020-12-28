@@ -39,7 +39,7 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude) {
   }
   for (uint8_t idx = 0; idx < 8; idx++) {
     if (((active_positions >> idx)%2) == 0) {
-      pwm_driver_->setPWM(7-idx, 4095, 0);
+      pwm_driver_->setPWM(7-idx, 0, 0);
     } else {
       pwm_driver_->setPWM(7-idx, 0, amplitude);
     }
