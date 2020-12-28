@@ -7,6 +7,7 @@
 #include "rotarySwitch3Pos.h"
 #include "mode.h"
 #include "M74HC166.h"
+#include "SN74HC595.h"
 
 
 tact::Display display;
@@ -17,6 +18,11 @@ tact::M74HC166 buttons(
   tact::config::ESP_pin_M74HC166_latch,
   tact::config::ESP_pin_M74HC166_clock,
   tact::config::ESP_pin_M74HC166_data
+);
+tact::SN74HC595 button_leds(
+  tact::config::ESP_pin_SN74HC595_latch,
+  tact::config::ESP_pin_SN74HC595_clock,
+  tact::config::ESP_pin_SN74HC595_data
 );
 
 
@@ -38,6 +44,11 @@ void setup() {
   delay(tact::config::initialization_delay);
 
   buttons.Initialize();
+  delay(tact::config::initialization_delay);
+  button_leds.Initialize();
+  delay(tact::config::initialization_delay);
+  button_leds.Update(0);
+  delay(tact::config::initialization_delay);
 
   if (!display.Initialize()) {
     #ifdef TACT_DEBUG
@@ -57,14 +68,16 @@ void setup() {
 
 void loop() {
   auto pressed_buttons = buttons.Read();
-  auto pressed_actuator_buttons = pressed_buttons >> 8;
+  uint8_t pressed_actuator_buttons = pressed_buttons >> 8u;
+  button_leds.Update(pressed_actuator_buttons);
   if (pressed_actuator_buttons != 0) {
     #ifdef TACT_DEBUG
     Serial.print("activeActuatorButtons BIN: ");
     Serial.println(pressed_actuator_buttons, BIN);
     #endif //TACT_DEBUG
   }
-  uint8_t pressed_menu_buttons = (pressed_buttons >> 5) & 0x7;
+
+  uint8_t pressed_menu_buttons = (pressed_buttons >> 5u) & 0x7u;
   if (pressed_menu_buttons != 0) {
     #ifdef TACT_DEBUG
     Serial.print("activeMenuButtons BIN: ");

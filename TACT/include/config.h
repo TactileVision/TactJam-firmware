@@ -23,6 +23,9 @@ namespace config {
   const uint8_t ESP_pin_M74HC166_latch = 33;
   const uint8_t ESP_pin_M74HC166_clock = 32;
   const uint8_t ESP_pin_M74HC166_data = 25;
+  const uint8_t ESP_pin_SN74HC595_latch = 27;
+  const uint8_t ESP_pin_SN74HC595_clock = 26;
+  const uint8_t ESP_pin_SN74HC595_data = 14;
 
 }
 }
