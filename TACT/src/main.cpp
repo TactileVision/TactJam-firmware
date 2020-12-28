@@ -8,6 +8,7 @@
 #include "mode.h"
 #include "M74HC166.h"
 #include "SN74HC595.h"
+#include "PCA9685.h"
 
 
 tact::Display display;
@@ -19,11 +20,13 @@ tact::M74HC166 buttons(
   tact::config::ESP_pin_M74HC166_clock,
   tact::config::ESP_pin_M74HC166_data
 );
+uint8_t last_pressed_actuator_buttons = 0;
 tact::SN74HC595 button_leds(
   tact::config::ESP_pin_SN74HC595_latch,
   tact::config::ESP_pin_SN74HC595_clock,
   tact::config::ESP_pin_SN74HC595_data
 );
+tact::PCA9685 actuator_driver;
 
 
 void setup() {
@@ -49,6 +52,10 @@ void setup() {
   delay(tact::config::initialization_delay);
   button_leds.Update(0);
   delay(tact::config::initialization_delay);
+  actuator_driver.Initialize();
+  delay(tact::config::initialization_delay);
+  actuator_driver.Update(0, 0);
+  delay(tact::config::initialization_delay);
 
   if (!display.Initialize()) {
     #ifdef TACT_DEBUG
@@ -69,24 +76,39 @@ void setup() {
 void loop() {
   auto pressed_buttons = buttons.Read();
   uint8_t pressed_actuator_buttons = pressed_buttons >> 8u;
-  button_leds.Update(pressed_actuator_buttons);
-  if (pressed_actuator_buttons != 0) {
+  if (pressed_actuator_buttons != last_pressed_actuator_buttons) {
+    button_leds.Update(pressed_actuator_buttons);
+    auto amplitude = amplitude_encoder.Get12bit();
+    actuator_driver.Update(pressed_actuator_buttons, amplitude);
+    last_pressed_actuator_buttons = pressed_actuator_buttons;
     #ifdef TACT_DEBUG
-    Serial.print("activeActuatorButtons BIN: ");
-    Serial.println(pressed_actuator_buttons, BIN);
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.print("active actuator buttons BIN: ");
+      Serial.println(pressed_actuator_buttons, BIN);
+      Serial.printf("amplitude (12bit): %u\n", amplitude);
+    }
     #endif //TACT_DEBUG
   }
 
   uint8_t pressed_menu_buttons = (pressed_buttons >> 5u) & 0x7u;
   if (pressed_menu_buttons != 0) {
     #ifdef TACT_DEBUG
-    Serial.print("activeMenuButtons BIN: ");
-    Serial.println(pressed_menu_buttons, BIN);
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.print("active menu buttons BIN: ");
+      Serial.println(pressed_menu_buttons, BIN);
+    }
     #endif //TACT_DEBUG
   }
 
   if (amplitude_encoder.UpdateAvailable()) {
     display.DrawAmplitude(amplitude_encoder.GetPercent());
+    auto amplitude = amplitude_encoder.Get12bit();
+    actuator_driver.Update(pressed_actuator_buttons, amplitude);
+    #ifdef TACT_DEBUG
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.printf("amplitude (12bit): %u\n", amplitude);
+    }
+    #endif //TACT_DEBUG
   }
 
   if (mode_encoder.UpdateAvailable()) {
@@ -100,5 +122,6 @@ void loop() {
     // [TODO] change setup
   }
 
+  // [TODO] replace by timer interrupts
   delay(20);
 }
