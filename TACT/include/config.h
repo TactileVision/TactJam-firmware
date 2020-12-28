@@ -20,6 +20,9 @@ namespace config {
   const uint8_t ESP_pin_linear_encoder = 15;
   const uint8_t ESP_pin_mode_encoder = 13;
   const uint8_t ESP_pin_slot_encoder = 12;
+  const uint8_t ESP_pin_M74HC166_latch = 33;
+  const uint8_t ESP_pin_M74HC166_clock = 32;
+  const uint8_t ESP_pin_M74HC166_data = 25;
 
 }
 }
