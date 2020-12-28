@@ -14,7 +14,9 @@
 tact::Display display;
 tact::LinearEncoder amplitude_encoder(tact::config::ESP_pin_linear_encoder);
 tact::RotarySwitch3Pos mode_encoder(tact::config::ESP_pin_mode_encoder);
+tact::Modes mode;
 tact::RotarySwitch3Pos slot_encoder(tact::config::ESP_pin_slot_encoder);
+uint8_t slot;
 tact::M74HC166 buttons(
   tact::config::ESP_pin_M74HC166_latch,
   tact::config::ESP_pin_M74HC166_clock,
@@ -27,6 +29,10 @@ tact::SN74HC595 button_leds(
   tact::config::ESP_pin_SN74HC595_data
 );
 tact::PCA9685 actuator_driver;
+
+void HandleJamMode();
+void HandleRecordMode();
+void HandleDataTransferMode();
 
 
 void setup() {
@@ -42,8 +48,10 @@ void setup() {
   amplitude_encoder.Initialize();
   delay(tact::config::initialization_delay);
   mode_encoder.Initialize();
+  mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
   delay(tact::config::initialization_delay);
   slot_encoder.Initialize();
+  slot = slot_encoder.GetPosition();
   delay(tact::config::initialization_delay);
 
   buttons.Initialize();
@@ -74,6 +82,37 @@ void setup() {
 
 
 void loop() {
+  if (mode_encoder.UpdateAvailable()) {
+    mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
+    auto mode_text = tact::Mode::GetName(mode);
+    display.DrawModeSelection(mode_text);
+  }
+
+  if (slot_encoder.UpdateAvailable()) {
+    slot = slot_encoder.GetPosition();
+    display.DrawSlotSelection(slot);
+    #ifdef TACT_DEBUG
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.printf("slot: %u\n", slot);
+    }
+    #endif //TACT_DEBUG
+  }
+
+  switch (mode) {
+  case tact::Modes::jam :
+    HandleJamMode();
+    break;
+  case tact::Modes::record :
+    HandleRecordMode();
+    break;
+  case tact::Modes::transfer :
+    HandleDataTransferMode();
+    break;
+  }
+}
+
+
+void HandleJamMode() {
   auto pressed_buttons = buttons.Read();
   uint8_t pressed_actuator_buttons = pressed_buttons >> 8u;
   if (pressed_actuator_buttons != last_pressed_actuator_buttons) {
@@ -111,17 +150,24 @@ void loop() {
     #endif //TACT_DEBUG
   }
 
-  if (mode_encoder.UpdateAvailable()) {
-    auto mode_text = tact::Mode::GetName(static_cast<tact::Modes>(mode_encoder.GetPosition()));
-    display.DrawModeSelection(mode_text);
-    // [TODO] change setup
-  }
-
-  if (slot_encoder.UpdateAvailable()) {
-    display.DrawSlotSelection(slot_encoder.GetPosition());
-    // [TODO] change setup
-  }
-
   // [TODO] replace by timer interrupts
   delay(20);
+}
+
+
+// [TODO]
+void HandleRecordMode() {
+  #ifdef TACT_DEBUG
+  Serial.println("Record Mode is not implemented yet");
+  #endif //TACT_DEBUG
+  delay(2000);
+}
+
+
+// [TODO]
+void HandleDataTransferMode() {
+  #ifdef TACT_DEBUG
+  Serial.println("Transfer Mode is not implemented yet");
+  #endif //TACT_DEBUG
+  delay(2000);
 }
