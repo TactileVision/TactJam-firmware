@@ -6,6 +6,7 @@
 namespace tact {
 
 enum class Modes : uint8_t {
+  undefined = 0,
   jam = 1,
   record = 2,
   transfer = 3
@@ -19,6 +20,9 @@ class Mode {
     static String GetName(tact::Modes mode) {
       String name;
       switch (mode) {
+      case Modes::undefined:
+        name = "---";
+        break;
       case Modes::jam:
         name = "jam";
         break;

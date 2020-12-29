@@ -13,12 +13,15 @@ class M74HC166 {
     uint16_t data_;
     bool initialized_;
 
+    uint16_t ShiftOut();
+
   public:
     M74HC166() = delete;
     M74HC166(uint8_t latch_pin, uint8_t clock_pin, uint8_t data_pin);
     ~M74HC166() = default;
 
     void Initialize();
+    bool UpdateAvailable();
     uint16_t Read();
 };
 

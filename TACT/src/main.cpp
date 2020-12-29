@@ -2,27 +2,26 @@
 #include <Adafruit_I2CDevice.h>
 
 #include "config.h"
+#include "mode.h"
+#include "state.h"
 #include "display.h"
 #include "linearEncoder.h"
 #include "rotarySwitch3Pos.h"
-#include "mode.h"
 #include "M74HC166.h"
 #include "SN74HC595.h"
 #include "PCA9685.h"
 
-
+tact::State current_state;
+tact::State previous_state;
 tact::Display display;
 tact::LinearEncoder amplitude_encoder(tact::config::ESP_pin_linear_encoder);
 tact::RotarySwitch3Pos mode_encoder(tact::config::ESP_pin_mode_encoder);
-tact::Modes mode;
 tact::RotarySwitch3Pos slot_encoder(tact::config::ESP_pin_slot_encoder);
-uint8_t slot;
 tact::M74HC166 buttons(
   tact::config::ESP_pin_M74HC166_latch,
   tact::config::ESP_pin_M74HC166_clock,
   tact::config::ESP_pin_M74HC166_data
 );
-uint8_t last_pressed_actuator_buttons = 0;
 tact::SN74HC595 button_leds(
   tact::config::ESP_pin_SN74HC595_latch,
   tact::config::ESP_pin_SN74HC595_clock,
@@ -46,14 +45,15 @@ void setup() {
   #endif //TACT_DEBUG
 
   amplitude_encoder.Initialize();
+  current_state.amplitude = amplitude_encoder.Get12bit();
+  current_state.amplitude_percent = amplitude_encoder.GetPercent();
   delay(tact::config::initialization_delay);
   mode_encoder.Initialize();
-  mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
+  current_state.mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
   delay(tact::config::initialization_delay);
   slot_encoder.Initialize();
-  slot = slot_encoder.GetPosition();
+  current_state.slot = slot_encoder.GetPosition();
   delay(tact::config::initialization_delay);
-
   buttons.Initialize();
   delay(tact::config::initialization_delay);
   button_leds.Initialize();
@@ -78,80 +78,93 @@ void setup() {
     amplitude_encoder.GetPercent()
   );
   delay(1000);
+  previous_state = current_state;
 }
 
 
 void loop() {
   if (mode_encoder.UpdateAvailable()) {
-    mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
-    auto mode_text = tact::Mode::GetName(mode);
+    current_state.mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
+    auto mode_text = tact::Mode::GetName(current_state.mode);
     display.DrawModeSelection(mode_text);
   }
 
   if (slot_encoder.UpdateAvailable()) {
-    slot = slot_encoder.GetPosition();
-    display.DrawSlotSelection(slot);
+    current_state.slot = slot_encoder.GetPosition();
+    display.DrawSlotSelection(current_state.slot);
     #ifdef TACT_DEBUG
     if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
-      Serial.printf("slot: %u\n", slot);
-    }
-    #endif //TACT_DEBUG
-  }
-
-  switch (mode) {
-  case tact::Modes::jam :
-    HandleJamMode();
-    break;
-  case tact::Modes::record :
-    HandleRecordMode();
-    break;
-  case tact::Modes::transfer :
-    HandleDataTransferMode();
-    break;
-  }
-}
-
-
-void HandleJamMode() {
-  auto pressed_buttons = buttons.Read();
-  uint8_t pressed_actuator_buttons = pressed_buttons >> 8u;
-  if (pressed_actuator_buttons != last_pressed_actuator_buttons) {
-    button_leds.Update(pressed_actuator_buttons);
-    auto amplitude = amplitude_encoder.Get12bit();
-    actuator_driver.Update(pressed_actuator_buttons, amplitude);
-    last_pressed_actuator_buttons = pressed_actuator_buttons;
-    #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
-      Serial.print("active actuator buttons BIN: ");
-      Serial.println(pressed_actuator_buttons, BIN);
-      Serial.printf("amplitude (12bit): %u\n", amplitude);
-    }
-    #endif //TACT_DEBUG
-  }
-
-  uint8_t pressed_menu_buttons = (pressed_buttons >> 5u) & 0x7u;
-  if (pressed_menu_buttons != 0) {
-    #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
-      Serial.print("active menu buttons BIN: ");
-      Serial.println(pressed_menu_buttons, BIN);
+      Serial.printf("slot: %u\n", current_state.slot);
     }
     #endif //TACT_DEBUG
   }
 
   if (amplitude_encoder.UpdateAvailable()) {
-    display.DrawAmplitude(amplitude_encoder.GetPercent());
-    auto amplitude = amplitude_encoder.Get12bit();
-    actuator_driver.Update(pressed_actuator_buttons, amplitude);
+    current_state.amplitude = amplitude_encoder.Get12bit();
+    current_state.amplitude_percent = amplitude_encoder.GetPercent();
+    display.DrawAmplitude(current_state.amplitude_percent);
     #ifdef TACT_DEBUG
     if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
-      Serial.printf("amplitude (12bit): %u\n", amplitude);
+      Serial.printf("amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
     }
     #endif //TACT_DEBUG
   }
 
-  // [TODO] replace by timer interrupts
-  delay(20);
+  switch (current_state.mode) {
+    case tact::Modes::undefined :
+      #ifdef TACT_DEBUG
+      Serial.println("device is in an undefined mode");
+      #endif //TACT_DEBUG
+      break;
+    case tact::Modes::jam :
+      HandleJamMode();
+      break;
+    case tact::Modes::record :
+      HandleRecordMode();
+      break;
+    case tact::Modes::transfer :
+      HandleDataTransferMode();
+      break;
+  }
+
+  previous_state = current_state;
+}
+
+
+void HandleJamMode() {
+  if (buttons.UpdateAvailable()) {
+    current_state.pressed_buttons = buttons.Read();
+    current_state.pressed_actuator_buttons = current_state.pressed_buttons >> 8u;
+    current_state.pressed_menu_buttons = (current_state.pressed_buttons >> 5u) & 0x7u;
+  }
+
+  if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
+    button_leds.Update(current_state.pressed_actuator_buttons);
+    actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+    current_state.pressed_actuator_buttons = current_state.pressed_actuator_buttons;
+    #ifdef TACT_DEBUG
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.print("active actuator buttons BIN: ");
+      Serial.print(current_state.pressed_actuator_buttons, BIN);
+      Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
+    }
+    #endif //TACT_DEBUG
+  }
+
+  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+    #ifdef TACT_DEBUG
+    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+      Serial.print("active menu buttons BIN: ");
+      Serial.println(current_state.pressed_menu_buttons, BIN);
+    }
+    #endif //TACT_DEBUG
+  }
+
+  if (previous_state.amplitude_percent != current_state.amplitude_percent) {
+    actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+  }
+
+  delay(2);
 }
 
 

@@ -24,20 +24,35 @@ uint16_t M74HC166::Read() {
   if (!initialized_) {
     Initialize();
   }
+  data_ = ShiftOut();
+  return data_;
+}
+
+
+bool M74HC166::UpdateAvailable() {
+  if (!initialized_) {
+    Initialize();
+  }
+  auto data = ShiftOut();
+  return (data != data_);
+}
+
+
+uint16_t M74HC166::ShiftOut() {
   digitalWrite(latch_pin_, LOW);
   digitalWrite(clock_pin_, LOW);
   digitalWrite(clock_pin_, HIGH);
   digitalWrite(latch_pin_, HIGH);
-  data_ = 0;
+  uint16_t data = 0;
   for (uint8_t j = 0; j < 16; j++) {
     uint16_t d = digitalRead(data_pin_);
     if (d == 1) {
-      bitSet(data_, j);
+      bitSet(data, j);
     }
     digitalWrite(clock_pin_, LOW);
     digitalWrite(clock_pin_, HIGH);
   }
-  return data_;
+  return data;
 }
 
 }
