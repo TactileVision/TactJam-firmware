@@ -99,7 +99,7 @@ void Display::DrawContentTeaser(const String& text) {
   SSD1306_->display();
 }
 
-
+// TODO: This method declaration may change depending on the information we need to display.
 void Display::DrawTactonDetails(const uint8_t slot, const String& uuid, uint32_t instruction_size, uint64_t length_millis) {
   ClearContent();
   SSD1306_->setTextColor(SSD1306_WHITE);

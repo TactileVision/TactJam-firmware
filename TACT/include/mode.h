@@ -12,11 +12,13 @@ enum class Modes : uint8_t {
   transfer = 3
 };
 
-class Mode {
-  private:
-    Mode() {}
-
-  public:
+struct Mode {
+    /**
+     * @brief Get the name of a given mode.
+     * 
+     * @param mode the selected mode.
+     * @return String the name of the mode.
+     */
     static String GetName(tact::Modes mode) {
       String name;
       switch (mode) {

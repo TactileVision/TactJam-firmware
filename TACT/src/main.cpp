@@ -29,8 +29,22 @@ tact::SN74HC595 button_leds(
 );
 tact::PCA9685 actuator_driver;
 
+/**
+ * @brief 
+ * 
+ */
 void HandleJamMode();
+
+/**
+ * @brief 
+ * 
+ */
 void HandleRecPlayMode();
+
+/**
+ * @brief 
+ * 
+ */
 void HandleDataTransferMode();
 
 
@@ -41,7 +55,7 @@ void setup() {
   }
 
   #ifdef TACT_DEBUG
-  Serial.printf("TactJam (TACT v%s-%s)\n", TACT_VERSION, GIT_REV);
+  Serial.printf("TactJam (TACT %s-%s)\n", TACT_VERSION, GIT_REV);
   #endif //TACT_DEBUG
 
   amplitude_encoder.Initialize();
@@ -90,7 +104,7 @@ void loop() {
   }
 
   if (slot_encoder.UpdateAvailable()) {
-    // [TODO] swop current tacton (#6): https://github.com/TactileVision/TactJam-firmware/issues/6
+    // TODO: swop current tacton (#6): https://github.com/TactileVision/TactJam-firmware/issues/6
     current_state.slot = slot_encoder.GetPosition();
     display.DrawSlotSelection(current_state.slot);
     #ifdef TACT_DEBUG
@@ -170,11 +184,11 @@ void HandleJamMode() {
 
 
 void HandleRecPlayMode() {
-  // [TODO] play selected tacton (#5): https://github.com/TactileVision/TactJam-firmware/issues/5
-      // [TODO] toggle loop mode (#9): https://github.com/TactileVision/TactJam-firmware/issues/9
-  // [TODO] record tacton (#3): https://github.com/TactileVision/TactJam-firmware/issues/3
-      // [TODO] amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
-  // [TODO] delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
+  // TODO: play selected tacton (#5): https://github.com/TactileVision/TactJam-firmware/issues/5
+      // TODO: toggle loop mode (#9): https://github.com/TactileVision/TactJam-firmware/issues/9
+  // TODO: record tacton (#3): https://github.com/TactileVision/TactJam-firmware/issues/3
+      // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
+  // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
   #ifdef TACT_DEBUG
   Serial.println("Record and Play Mode is not implemented yet");
   #endif //TACT_DEBUG
@@ -183,8 +197,8 @@ void HandleRecPlayMode() {
 
 
 void HandleDataTransferMode() {
-  // [TODO] receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
-  // [TODO] send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
+  // TODO: receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
+  // TODO: send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
   #ifdef TACT_DEBUG
   Serial.println("Transfer Mode is not implemented yet");
   #endif //TACT_DEBUG
