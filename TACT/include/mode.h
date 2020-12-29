@@ -8,7 +8,7 @@ namespace tact {
 enum class Modes : uint8_t {
   undefined = 0,
   jam = 1,
-  record = 2,
+  rec_play = 2,
   transfer = 3
 };
 
@@ -26,8 +26,8 @@ class Mode {
       case Modes::jam:
         name = "jam";
         break;
-      case Modes::record:
-        name = "rec";
+      case Modes::rec_play:
+        name = "r/p";
         break;
       case Modes::transfer:
         name = "dat";
