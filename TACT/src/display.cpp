@@ -33,7 +33,7 @@ void Display::DrawBootScreen() {
   SSD1306_->setTextSize(1);
   SSD1306_->setCursor(kBootScreenTextX, 4*kLineHeight);
   SSD1306_->print("version ");
-  SSD1306_->println(TACT_VERSION);
+  SSD1306_->println(GIT_TAG);
   SSD1306_->setCursor(kBootScreenTextX, 5*kLineHeight);
   SSD1306_->print("rev ");
   SSD1306_->println(GIT_REV);

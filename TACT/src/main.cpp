@@ -55,7 +55,7 @@ void setup() {
   }
 
   #ifdef TACT_DEBUG
-  Serial.printf("TactJam (TACT %s-%s)\n", TACT_VERSION, GIT_REV);
+  Serial.printf("TactJam (TACT %s-%s)\n", GIT_TAG, GIT_REV);
   #endif //TACT_DEBUG
 
   amplitude_encoder.Initialize();

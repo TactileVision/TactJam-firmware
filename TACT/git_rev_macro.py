@@ -5,4 +5,11 @@ revision = (
     .strip()
     .decode("utf-8")
 )
-print("-DGIT_REV='\"%s\"'" % revision[0:7])
+
+latest_tag = (
+    subprocess.check_output("git describe --tags $(git rev-list --tags --max-count=1)", shell=True)
+    .strip()
+    .decode("utf-8")
+)
+
+print("-DGIT_REV='\"%s\"' -DGIT_TAG='\"%s\"'" % (revision[0:7], latest_tag))
