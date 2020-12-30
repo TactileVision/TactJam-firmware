@@ -14,18 +14,18 @@
 tact::State current_state;
 tact::State previous_state;
 tact::Display display;
-tact::LinearEncoder amplitude_encoder(tact::config::ESP_pin_linear_encoder);
-tact::RotarySwitch3Pos mode_encoder(tact::config::ESP_pin_mode_encoder);
-tact::RotarySwitch3Pos slot_encoder(tact::config::ESP_pin_slot_encoder);
+tact::LinearEncoder amplitude_encoder(tact::config::esp::pins::kLinearEncoder);
+tact::RotarySwitch3Pos mode_encoder(tact::config::esp::pins::kModeEncoder);
+tact::RotarySwitch3Pos slot_encoder(tact::config::esp::pins::kSlotEncoder);
 tact::M74HC166 buttons(
-  tact::config::ESP_pin_M74HC166_latch,
-  tact::config::ESP_pin_M74HC166_clock,
-  tact::config::ESP_pin_M74HC166_data
+  tact::config::esp::pins::kM74HC166Latch,
+  tact::config::esp::pins::kM74HC166Clock,
+  tact::config::esp::pins::kM74HC166Data
 );
 tact::SN74HC595 button_leds(
-  tact::config::ESP_pin_SN74HC595_latch,
-  tact::config::ESP_pin_SN74HC595_clock,
-  tact::config::ESP_pin_SN74HC595_data
+  tact::config::esp::pins::kSN74HC595Latch,
+  tact::config::esp::pins::kSN74HC595Clock,
+  tact::config::esp::pins::kSN74HC595Data
 );
 tact::PCA9685 actuator_driver;
 
@@ -49,7 +49,7 @@ void HandleDataTransferMode();
 
 
 void setup() {
-  Serial.begin(tact::config::serial_baud_rate);
+  Serial.begin(tact::config::kSerialBaudRate);
   while (!Serial) {
     delay(5);
   }
@@ -61,23 +61,23 @@ void setup() {
   amplitude_encoder.Initialize();
   current_state.amplitude = amplitude_encoder.Get12bit();
   current_state.amplitude_percent = amplitude_encoder.GetPercent();
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   mode_encoder.Initialize();
   current_state.mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   slot_encoder.Initialize();
   current_state.slot = slot_encoder.GetPosition();
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   buttons.Initialize();
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   button_leds.Initialize();
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   button_leds.Update(0);
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   actuator_driver.Initialize();
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
   actuator_driver.Update(0, 0);
-  delay(tact::config::initialization_delay);
+  delay(tact::config::kInitializationDelay);
 
   if (!display.Initialize()) {
     #ifdef TACT_DEBUG
@@ -108,7 +108,7 @@ void loop() {
     current_state.slot = slot_encoder.GetPosition();
     display.DrawSlotSelection(current_state.slot);
     #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
       Serial.printf("slot: %u\n", current_state.slot);
     }
     #endif //TACT_DEBUG
@@ -119,7 +119,7 @@ void loop() {
     current_state.amplitude_percent = amplitude_encoder.GetPercent();
     display.DrawAmplitude(current_state.amplitude_percent);
     #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
       Serial.printf("amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
     }
     #endif //TACT_DEBUG
@@ -158,7 +158,7 @@ void HandleJamMode() {
     actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
     current_state.pressed_actuator_buttons = current_state.pressed_actuator_buttons;
     #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
       Serial.print("active actuator buttons BIN: ");
       Serial.print(current_state.pressed_actuator_buttons, BIN);
       Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
@@ -168,7 +168,7 @@ void HandleJamMode() {
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     #ifdef TACT_DEBUG
-    if (tact::config::debug_level == tact::config::DebugLevel::verbose) {
+    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
       Serial.print("active menu buttons BIN: ");
       Serial.println(current_state.pressed_menu_buttons, BIN);
     }
