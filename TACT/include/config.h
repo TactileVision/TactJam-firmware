@@ -30,6 +30,13 @@ namespace pins {
   const uint8_t kSN74HC595Clock = 26;
   const uint8_t kSN74HC595Data = 14;
 } //namespace pins
+
+  inline void DisableRadios() {
+    if (btStarted()) {
+      btStop();
+    }
+  }
+
 } //namespace esp
 } //namespace config
 } //namespace tact

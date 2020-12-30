@@ -92,7 +92,10 @@ void setup() {
     amplitude_encoder.GetPercent()
   );
   delay(1000);
+  
   previous_state = current_state;
+
+  tact::config::esp::DisableRadios();
 }
 
 
