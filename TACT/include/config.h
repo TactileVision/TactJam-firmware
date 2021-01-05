@@ -18,17 +18,34 @@ namespace config {
   const uint8_t kInitializationDelay = 20;
 
 
+
 namespace esp {
 namespace pins {
-  const uint8_t kLinearEncoder = 15;
-  const uint8_t kModeEncoder = 13;
-  const uint8_t kSlotEncoder = 12;
-  const uint8_t kM74HC166Latch = 33;
-  const uint8_t kM74HC166Clock = 32;
-  const uint8_t kM74HC166Data = 25;
+
+#if TACT_BOARD_REV==0
+const uint8_t kLinearEncoder  = 15;
+const uint8_t kModeEncoder    = 13;
+const uint8_t kSlotEncoder    = 12;
+const uint8_t kM74HC166Latch  = 33;
+const uint8_t kM74HC166Clock  = 32;
+const uint8_t kM74HC166Data   = 25;
+const uint8_t kSN74HC595Latch = 27;
+const uint8_t kSN74HC595Clock = 26;
+const uint8_t kSN74HC595Data  = 14;
+const uint8_t kBuzzer         = 23;
+#elif TACT_BOARD_REV==1
+const uint8_t kLinearEncoder  = 34;
+const uint8_t kModeEncoder    = 35;
+const uint8_t kSlotEncoder    = 36;
+const uint8_t kM74HC166Latch  = 33;
+const uint8_t kM74HC166Clock  = 32;
+const uint8_t kM74HC166Data   = 25;
   const uint8_t kSN74HC595Latch = 27;
   const uint8_t kSN74HC595Clock = 26;
-  const uint8_t kSN74HC595Data = 14;
+const uint8_t kSN74HC595Data  = 16;
+const uint8_t kBuzzer         = 4;
+#endif //TACT_BOARD_REV
+
 } //namespace pins
 
   inline void DisableRadios() {
