@@ -10,6 +10,7 @@
 #include "M74HC166.h"
 #include "SN74HC595.h"
 #include "PCA9685.h"
+#include "buzzer.h"
 
 tact::State current_state;
 tact::State previous_state;
@@ -28,6 +29,12 @@ tact::SN74HC595 button_leds(
   tact::config::esp::pins::kSN74HC595Data
 );
 tact::PCA9685 actuator_driver;
+#ifdef __TACT_BUZZER_MULTIPLEXER__
+tact::Buzzer buzzer;
+#else
+tact::Buzzer buzzer(tact::config::esp::pins::kBuzzer);
+#endif
+
 
 /**
  * @brief 
@@ -78,14 +85,19 @@ void setup() {
   delay(tact::config::kInitializationDelay);
   actuator_driver.Update(0, 0);
   delay(tact::config::kInitializationDelay);
+  buzzer.Initialize();
+  delay(tact::config::kInitializationDelay);
 
   if (!display.Initialize()) {
     #ifdef TACT_DEBUG
     Serial.println("ERROR: display setup");
     #endif //TACT_DEBUG
   }
+  
   display.DrawBootScreen();
+  buzzer.PlayInitSequence();
   delay(2000);
+
   display.DrawMenuScreen(
     tact::Mode::GetName(static_cast<tact::Modes>(mode_encoder.GetPosition())),
     slot_encoder.GetPosition(),
