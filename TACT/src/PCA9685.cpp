@@ -1,4 +1,5 @@
 #include "PCA9685.h"
+#include "config.h"
 
 namespace tact  {
 
@@ -33,7 +34,7 @@ void PCA9685::Initialize() {
 }
 
 
-void PCA9685::Update(uint8_t active_positions, uint16_t amplitude) {
+void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_overdrive) {
   if (!initialized_) {
     Initialize();
   }
@@ -41,6 +42,12 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude) {
     if (((active_positions >> idx)%2) == 0) {
       pwm_driver_->setPWM(7-idx, 0, 0);
     } else {
+      if (enable_overdrive) {
+        pwm_driver_->setPWM(7-idx, 0, kMaxAmplitude);
+        // TODO delay may interfer with the control flow
+        // find a better solution
+        delay(config::kERMOverdriveDuration);
+      }
       pwm_driver_->setPWM(7-idx, 0, amplitude);
     }
   }

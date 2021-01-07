@@ -16,6 +16,8 @@ class PCA9685 {
     PCA9685(uint8_t address, float frequency);
     ~PCA9685();
 
+    static const uint16_t kMaxAmplitude = 4095;
+
     /**
      * @brief Initialize the PWM driver.
      * 
@@ -27,8 +29,9 @@ class PCA9685 {
      * 
      * @param active_positions the bit pattern of activated actuators (1=activated).
      * @param amplitude the 12bit value (0-4095).
+     * @param enable_overdrive if set to true the actuator will start on max. amplitude for a short period of time
      */
-    void Update(uint8_t active_positions, uint16_t amplitude = 4095);
+    void Update(uint8_t active_positions, uint16_t amplitude = kMaxAmplitude, bool enable_overdrive = true);
 };
 
 }

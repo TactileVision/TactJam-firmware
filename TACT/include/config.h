@@ -17,6 +17,8 @@ const auto kDebugLevel = (TACT_DEBUG == 1) ? DebugLevel::basic : DebugLevel::ver
 const auto kSerialBaudRate = 115200;
 const uint8_t kInitializationDelay = 20;
 
+const uint8_t kERMOverdriveDuration = 40;
+
 // The dev-board v0.2 has the buzzer attached to the PWM multiplexer.
 // TODO: remove definition for final board
 #define __TACT_BUZZER_MULTIPLEXER__
