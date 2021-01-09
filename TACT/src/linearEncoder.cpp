@@ -42,6 +42,11 @@ uint8_t LinearEncoder::GetPercent(bool update) {
 }
 
 
+uint16_t LinearEncoder::PercentToLinearEncoder(uint8_t percent) {
+  return map(percent, 0, 100, 0, 4095);
+}
+
+
 uint8_t LinearEncoder::Get8bit(bool update) {
   if (update) {
     Read();

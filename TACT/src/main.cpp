@@ -11,6 +11,7 @@
 #include "SN74HC595.h"
 #include "PCA9685.h"
 #include "buzzer.h"
+#include "tactons.h"
 
 tact::State current_state;
 tact::State previous_state;
@@ -34,6 +35,7 @@ tact::Buzzer buzzer;
 #else
 tact::Buzzer buzzer(tact::config::esp::pins::kBuzzer);
 #endif
+tact::TactonRecorderPlayer tactonRecorderPlayer;
 
 
 /**
@@ -160,34 +162,35 @@ void loop() {
   previous_state = current_state;
 }
 
-
-void HandleJamMode() {
+void ReadButtons() {
   if (buttons.UpdateAvailable()) {
     current_state.pressed_buttons = buttons.Read();
     current_state.pressed_actuator_buttons = current_state.pressed_buttons >> 8u;
     current_state.pressed_menu_buttons = (current_state.pressed_buttons >> 5u) & 0x7u;
+  
+    #ifdef TACT_DEBUG
+    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
+      if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
+        Serial.print("active actuator buttons BIN: ");
+        Serial.print(current_state.pressed_actuator_buttons, BIN);
+        Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
+      }
+  
+      if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+        Serial.print("active menu buttons BIN: ");
+        Serial.println(current_state.pressed_menu_buttons, BIN);
+      }
+    }
+    #endif //TACT_DEBUG
   }
+}
 
+void HandleJamMode() {
+  ReadButtons();
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
     button_leds.Update(current_state.pressed_actuator_buttons);
     actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
     current_state.pressed_actuator_buttons = current_state.pressed_actuator_buttons;
-    #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.print("active actuator buttons BIN: ");
-      Serial.print(current_state.pressed_actuator_buttons, BIN);
-      Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
-    }
-    #endif //TACT_DEBUG
-  }
-
-  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-    #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.print("active menu buttons BIN: ");
-      Serial.println(current_state.pressed_menu_buttons, BIN);
-    }
-    #endif //TACT_DEBUG
   }
 
   if (previous_state.amplitude_percent != current_state.amplitude_percent) {
@@ -204,10 +207,37 @@ void HandleRecPlayMode() {
   // TODO: record tacton (#3): https://github.com/TactileVision/TactJam-firmware/issues/3
       // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
   // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
-  #ifdef TACT_DEBUG
-  Serial.println("Record and Play Mode is not implemented yet");
-  #endif //TACT_DEBUG
-  delay(2000);
+  ReadButtons();
+
+  if (current_state.slot != previous_state.slot ||
+    current_state.mode != previous_state.mode) {
+    tactonRecorderPlayer.Reset();
+    actuator_driver.Update(0, 0);
+    button_leds.Update(0);
+  }
+
+  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+      //menu button 1 pressed, start record
+      tactonRecorderPlayer.RecordButtonPressed(current_state, buzzer);
+    }
+    if ( (previous_state.pressed_menu_buttons & 2) == 2) {
+      //menu button 1 pressed, start record
+      tactonRecorderPlayer.PlayButtonPressed(buzzer);
+    }
+  }
+
+  if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
+    tactonRecorderPlayer.RecordSample(current_state, buzzer, actuator_driver, button_leds);
+  }
+  tactonRecorderPlayer.PlaySample(current_state, buzzer, actuator_driver, button_leds, amplitude_encoder);
+
+
+  //#ifdef TACT_DEBUG
+  //Serial.println("Record and Play Mode is not implemented yet");
+  //#endif //TACT_DEBUG
+
+  delay(2);
 }
 
 
