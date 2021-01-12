@@ -87,6 +87,10 @@ class Buzzer {
      * 
      */
     void PlayInitSequence();
+
+    void PlayConfirm();
+
+    void PlayFail();
 #endif //__TACT_BUZZER_MULTIPLEXER__
 };
 

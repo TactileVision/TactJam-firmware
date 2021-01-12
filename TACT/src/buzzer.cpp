@@ -124,6 +124,18 @@ void Buzzer::PlayInitSequence() {
   Tone(500, 300);
   NoTone(100);
 }
+
+void Buzzer::PlayConfirm() {
+  Tone(50, 100);
+  NoTone(10);
+}
+
+void Buzzer::PlayFail() {
+  Tone(150, 100);
+  NoTone(20);
+  Tone(150, 100);
+  NoTone(20);
+}
 #endif //__TACT_BUZZER_MULTIPLEXER__
 
 }
