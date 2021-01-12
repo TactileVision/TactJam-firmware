@@ -197,6 +197,7 @@ void HandleJamMode() {
     actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
   }
 
+  // TODO: check if delay is needed
   delay(2);
 }
 
@@ -237,6 +238,7 @@ void HandleRecPlayMode() {
   //Serial.println("Record and Play Mode is not implemented yet");
   //#endif //TACT_DEBUG
 
+  // TODO: check if delay is needed
   delay(2);
 }
 
