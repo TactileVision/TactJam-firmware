@@ -114,6 +114,7 @@ void Display::DrawTactonDetails(const uint8_t slot, const String& uuid, uint32_t
   SSD1306_->printf("length (ms):  %u\n", (uint32_t)length_millis);
   SSD1306_->setCursor(kContentSpacing, SSD1306_->getCursorY()+kSpacing);
   SSD1306_->printf("length (s):   %u\n", (uint32_t)(length_millis/1000));
+  SSD1306_->display();
 }
 
 
