@@ -21,11 +21,10 @@ const uint8_t kInitializationDelay = 20;
 const uint8_t kERMOverdriveDuration = 40;
 
 // The dev-board v0.2 has the buzzer attached to the PWM multiplexer.
-// TODO: remove definition for final board
+#if TACT_BOARD_REV==0
 #define __TACT_BUZZER_MULTIPLEXER__
-#ifdef __TACT_BUZZER_MULTIPLEXER__
 const uint8_t kBuzzerID = 8;
-#endif
+#endif //TACT_BOARD_RE
 
 
 namespace esp {
