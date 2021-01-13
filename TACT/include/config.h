@@ -2,6 +2,7 @@
 #define _TACT_CONFIG_
 
 #include <Arduino.h>
+#include <Wire.h>
 
 namespace tact {
 namespace config {
@@ -29,6 +30,9 @@ const uint8_t kBuzzerID = 8;
 
 namespace esp {
 namespace pins {
+
+const uint8_t kI2CSCL  = 22;
+const uint8_t kI2CSDA  = 21;
 
 #if TACT_BOARD_REV==0
 const uint8_t kLinearEncoder  = 15;
@@ -60,6 +64,17 @@ inline void DisableRadios() {
   if (btStarted()) {
     btStop();
   }
+}
+
+inline void StartI2C() {
+  if (!Wire.busy()) {
+    // run I2C in fast mode (400kHz)
+    Wire.begin(pins::kI2CSDA, pins::kI2CSCL, 400000U);
+    
+  }
+  #ifdef TACT_DEBUG
+  Serial.printf("start I2C bus with %uHz\n", Wire.getClock());
+  #endif //TACT_DEBUG
 }
 
 } //namespace esp

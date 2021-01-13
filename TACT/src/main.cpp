@@ -65,6 +65,8 @@ void setup() {
   Serial.printf("TactJam (TACT %s-%s)\n", GIT_TAG, GIT_REV);
   #endif //TACT_DEBUG
 
+  tact::config::esp::StartI2C();
+
   amplitude_encoder.Initialize();
   current_state.amplitude = amplitude_encoder.Get12bit();
   current_state.amplitude_percent = amplitude_encoder.GetPercent();

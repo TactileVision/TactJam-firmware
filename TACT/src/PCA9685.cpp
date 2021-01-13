@@ -23,13 +23,9 @@ PCA9685::~PCA9685() {
 
 
 void PCA9685::Initialize() {
-  if (!Wire.busy()) {
-    Wire.begin();
-  }
   pwm_driver_->begin();
   pwm_driver_->setOscillatorFrequency(27000000);
   pwm_driver_->setPWMFreq(frequency_);
-  Wire.setClock(400000);
   initialized_ = true;
 }
 
