@@ -108,7 +108,7 @@ public:
       for (uint8_t i = 0; i < 8; i++) {
         auto last_state = bitRead(active_buttons_, i);
         if (last_state == 1) {
-          Serial.printf("%d:%d\t", i, mapped_amplitude);
+          Serial.printf("act:%d amp:%d dT:%d\t", 8-i, mapped_amplitude, time_elapsed_ - time_last_write_);
           VTPInstructionV1 instruction;
           instruction.code = VTP_INST_SET_AMPLITUDE;
           instruction.params.format_b.channel_select = i;
