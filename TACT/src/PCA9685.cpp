@@ -31,6 +31,7 @@ void PCA9685::Initialize() {
   pwm_driver_->setPWMFreq(frequency_);
   Wire.setClock(400000);
   initialized_ = true;
+  active_positions_old = 0;
 }
 
 
@@ -45,14 +46,18 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
     return;
   }
   if (enable_overdrive) {
+    bool overdrive_activated = false;
     for (uint8_t idx = 0; idx < 8; idx++) {
-      if (((active_positions >> idx)%2) == 1) {
+      if ((((active_positions_old >> idx)%2) == 0) &&
+         ((active_positions >> idx)%2) == 1) {
         pwm_driver_->setPWM(7-idx, 0, kMaxAmplitude);
+        overdrive_activated = true;
       }
     }
     // TODO delay may interfer with the control flow
     // find a better solution
-    delay(config::kERMOverdriveDuration);
+    if ( overdrive_activated == true )
+      delay(config::kERMOverdriveDuration);
   }
   for (uint8_t idx = 0; idx < 8; idx++) {
     if (((active_positions >> idx)%2) == 0) {
@@ -61,6 +66,7 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
       pwm_driver_->setPWM(7-idx, 0, amplitude);
     }
   }
+  active_positions_old = active_positions;
 }
 
 }
