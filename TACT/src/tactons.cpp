@@ -77,10 +77,15 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
 
 void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
 
-  if ( state != State::recording) {
-    //actuator button is pressed during recording, this is not allowed
-    buzzer.PlayFail();
+  if ( state == State::playing) {
+    //actuator button is pressed during playback, this is not allowed
+    //buzzer.PlayFail();
     return;
+  }
+
+  if ( state == State::idle) {
+    //directly start recording, if actuator button is pressed in idle mode
+    RecordButtonPressed(current_state, buzzer);
   }
 
   if ( current_state.slot >= TACTONS_COUNT_MAX)
