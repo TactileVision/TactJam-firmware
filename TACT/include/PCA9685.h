@@ -10,6 +10,7 @@ class PCA9685 {
     uint8_t address_;
     float frequency_;
     bool initialized_;
+    uint8_t active_positions_;
 
   public:
     PCA9685();
