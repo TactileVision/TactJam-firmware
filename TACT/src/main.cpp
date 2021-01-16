@@ -146,7 +146,7 @@ void loop() {
     current_state.mode != previous_state.mode) {
     actuator_driver.Update(0, 0);
     button_leds.Update(0);
-    display.DrawContentTeaser(""); // clear screen
+    display.ClearContentTeaser();
   }
 
   switch (current_state.mode) {
