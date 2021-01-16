@@ -43,6 +43,7 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
     for (uint8_t idx = 0; idx < 8; idx++) {
       pwm_driver_->setPWM(7-idx, 0, 0);
     }
+    active_positions_old = active_positions;
     return;
   }
   if (enable_overdrive) {
