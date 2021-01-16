@@ -35,7 +35,7 @@ tact::Buzzer buzzer;
 #else
 tact::Buzzer buzzer(tact::config::esp::pins::kBuzzer);
 #endif
-tact::TactonRecorderPlayer tactonRecorderPlayer;
+tact::TactonRecorderPlayer tactonRecorderPlayer(&display, &actuator_driver, &button_leds);
 
 
 /**
@@ -142,6 +142,13 @@ void loop() {
     #endif //TACT_DEBUG
   }
 
+  if (current_state.slot != previous_state.slot ||
+    current_state.mode != previous_state.mode) {
+    actuator_driver.Update(0, 0);
+    button_leds.Update(0);
+    display.DrawContentTeaser(""); // clear screen
+  }
+
   switch (current_state.mode) {
     case tact::Modes::undefined :
       #ifdef TACT_DEBUG
@@ -213,8 +220,6 @@ void HandleRecPlayMode() {
   if (current_state.slot != previous_state.slot ||
     current_state.mode != previous_state.mode) {
     tactonRecorderPlayer.Reset();
-    actuator_driver.Update(0, 0);
-    button_leds.Update(0);
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
@@ -229,9 +234,9 @@ void HandleRecPlayMode() {
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    tactonRecorderPlayer.RecordSample(current_state, buzzer, actuator_driver, button_leds);
+    tactonRecorderPlayer.RecordSample(current_state, buzzer);
   }
-  tactonRecorderPlayer.PlaySample(current_state, buzzer, actuator_driver, button_leds, amplitude_encoder);
+  tactonRecorderPlayer.PlaySample(current_state, buzzer, amplitude_encoder);
 
 
   //#ifdef TACT_DEBUG

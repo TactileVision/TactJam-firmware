@@ -10,12 +10,29 @@ void TactonSample::SerialPrint() {
 }
 
 
-TactonRecorderPlayer::TactonRecorderPlayer() : tactons(TACTONS_COUNT_MAX) {
+TactonRecorderPlayer::TactonRecorderPlayer(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds) :
+  tactons(TACTONS_COUNT_MAX), display(display), actuator_driver(actuator_driver), button_leds(button_leds) {
 }
 
 
-void TactonRecorderPlayer::Reset(void)  {
-  state = State::idle;
+void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
+  if (state != this->state || force_display_update == true) {
+    switch(state) {
+      case State::idle: 
+        display->DrawContentTeaser("idle");
+        actuator_driver->Update(0, 0);
+        button_leds->Update(0);
+        break;
+      case State::playing: display->DrawContentTeaser("play"); break;
+      case State::recording: display->DrawContentTeaser("rec"); break;
+    }
+  }
+  this->state = state;
+}
+
+
+void TactonRecorderPlayer::Reset()  {
+  SetState(State::idle, true);
   #ifdef TACT_DEBUG
   Serial.println("actonRecorderPlayer::Reset");
   #endif //TACT_DEBUG
@@ -23,8 +40,10 @@ void TactonRecorderPlayer::Reset(void)  {
 
 
 void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer) {
+  actuator_driver->Update(0, 0);
+  button_leds->Update(0);
   if (state == State::recording) {
-    state = State::idle;
+    SetState(State::idle);
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
     return;
@@ -32,7 +51,7 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
   tactons.at(current_state.slot).tacton_samples.clear();
   //tactons.at(current_state.slot).tacton_samples.reserve(TACTON_SAMPLES_MAX);
   time_start_milliseconds = millis();
-  state = State::recording;
+  SetState(State::recording);
 
   buzzer.PlayConfirm();
 
@@ -43,9 +62,11 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
 
 
 void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
+  actuator_driver->Update(0, 0);
+  button_leds->Update(0);
   buzzer.PlayConfirm();
   time_start_milliseconds = millis();
-  state = State::playing;
+  SetState(State::playing);
   index_play_next = 0;
 
   #ifdef TACT_DEBUG
@@ -54,7 +75,7 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
 }
 
 
-void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer &buzzer, tact::PCA9685 &actuator_driver, tact::SN74HC595 &button_leds) {
+void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
 
   if ( state != State::recording) {
     //actuator button is pressed during recording, this is not allowed
@@ -72,8 +93,8 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 
   tactons.at(current_state.slot).tacton_samples.push_back(tactonSample);
 
-  button_leds.Update(current_state.pressed_actuator_buttons);
-  actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+  button_leds->Update(current_state.pressed_actuator_buttons);
+  actuator_driver->Update(current_state.pressed_actuator_buttons, current_state.amplitude);
 
   #ifdef TACT_DEBUG
   tactonSample.SerialPrint();
@@ -81,8 +102,7 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 }
 
 
-void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::PCA9685 &actuator_driver, 
-                                      tact::SN74HC595 &button_leds, tact::LinearEncoder &amplitude_encoder) {
+void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder) {
 
   if ( state != State::playing) {
     //buzzer.PlayFail();
@@ -98,7 +118,7 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
     //last sample has been played
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
-    state = State::idle;
+    SetState(State::idle);
     return;
   }
 
@@ -114,8 +134,8 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
   }
 
   if ( tacton_latest != NULL ) {
-    actuator_driver.Update(tacton_latest->buttons_state, amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
-    button_leds.Update(tacton_latest->buttons_state);
+    actuator_driver->Update(tacton_latest->buttons_state, amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
+    button_leds->Update(tacton_latest->buttons_state);
     #ifdef TACT_DEBUG
     Serial.printf("sample %d/%d: ", index_play_next, tacton_samples->size());
     tacton_latest->SerialPrint();

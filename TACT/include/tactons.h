@@ -7,6 +7,7 @@
 #include "PCA9685.h"
 #include "SN74HC595.h"
 #include "linearEncoder.h"
+#include "display.h"
 #include "state.h"
 
 namespace tact {
@@ -36,22 +37,25 @@ class TactonRecorderPlayer {
       playing
     };
 
-    TactonRecorderPlayer();
+    TactonRecorderPlayer(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds);
 
-    void Reset(void);
+    void SetState(State state, bool force_display_update = false);
+    void Reset();
     void RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer);
     void PlayButtonPressed(tact::Buzzer &buzzer);
-    void RecordSample(tact::State &current_state, tact::Buzzer &buzzer, tact::PCA9685 &actuator_driver, tact::SN74HC595 &button_leds);
-    void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::PCA9685 &actuator_driver, 
-                    tact::SN74HC595 &button_leds, tact::LinearEncoder &amplitude_encoder);
+    void RecordSample(tact::State &current_state, tact::Buzzer &buzzer);
+    void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder);
 
 
   private:
     std::vector<Tacton> tactons;
+    Display* display;
+    PCA9685* actuator_driver;
+    SN74HC595* button_leds;
 
     unsigned long time_start_milliseconds = 0;
     uint32_t index_play_next = 0;
-    State state = State::idle;
+    State state = State::idle; // use method SetState to change the state
 };
 
 
