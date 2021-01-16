@@ -240,6 +240,10 @@ void HandleRecPlayMode() {
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
     tactonRecorderPlayer.RecordSample(current_state, buzzer);
   }
+  if (previous_state.amplitude != current_state.amplitude &&
+    current_state.pressed_actuator_buttons != 0) {
+    tactonRecorderPlayer.RecordSample(current_state, buzzer);
+  }
   tactonRecorderPlayer.PlaySample(current_state, buzzer, amplitude_encoder);
 
 
