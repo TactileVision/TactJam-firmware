@@ -43,6 +43,7 @@ class TactonRecorderPlayer {
     void Reset();
     void RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer);
     void PlayButtonPressed(tact::Buzzer &buzzer);
+    void LoopButtonPressed(tact::Buzzer &buzzer);
     void RecordSample(tact::State &current_state, tact::Buzzer &buzzer);
     void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder);
 
@@ -56,6 +57,7 @@ class TactonRecorderPlayer {
     unsigned long time_start_milliseconds = 0;
     uint32_t index_play_next = 0;
     State state = State::idle; // use method SetState to change the state
+    bool loop_playback = false;
 };
 
 

@@ -231,6 +231,10 @@ void HandleRecPlayMode() {
       //menu button 1 pressed, start record
       tactonRecorderPlayer.PlayButtonPressed(buzzer);
     }
+    if ( (previous_state.pressed_menu_buttons & 1) == 1) {
+      //menu button 3 pressed, switch loop
+      tactonRecorderPlayer.LoopButtonPressed(buzzer);
+    }
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {

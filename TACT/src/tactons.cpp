@@ -19,11 +19,20 @@ void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
   if (state != this->state || force_display_update == true) {
     switch(state) {
       case State::idle: 
-        display->DrawContentTeaser("idle");
+        
+        //if ( loop_playback == true )
+        //  display->DrawContentTeaser("idle");
+        //else
+          display->DrawContentTeaser("idle");
         actuator_driver->Update(0, 0);
         button_leds->Update(0);
         break;
-      case State::playing: display->DrawContentTeaser("play"); break;
+      case State::playing:
+        if ( loop_playback == true )
+          display->DrawContentTeaser("play\nloop on");
+        else
+          display->DrawContentTeaser("play\nloop off");
+        break;
       case State::recording: display->DrawContentTeaser("rec"); break;
     }
   }
@@ -72,6 +81,15 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
   #ifdef TACT_DEBUG
   Serial.printf("PlayButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
   #endif //TACT_DEBUG
+}
+
+
+void TactonRecorderPlayer::LoopButtonPressed(tact::Buzzer &buzzer) {
+  if (state != State::playing)
+    return;
+  loop_playback = !loop_playback;
+  buzzer.PlayConfirm();
+  SetState(state, true);
 }
 
 
@@ -124,6 +142,8 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
     SetState(State::idle);
+    if (loop_playback == true)
+      PlayButtonPressed(buzzer);
     return;
   }
 
