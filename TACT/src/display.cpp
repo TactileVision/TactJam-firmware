@@ -81,6 +81,51 @@ void Display::DrawAmplitude(uint8_t amplitude_perc) {
 }
 
 
+void Display::DrawContentTeaserSingleLine(const String& text) {
+  if (!initialized_ && !Initialize()) {
+    return;
+  }
+  ClearContent();
+  SSD1306_->invertDisplay(false);
+  SSD1306_->setTextColor(SSD1306_WHITE);
+  SSD1306_->setTextSize(2);
+  int16_t x = kContentSpacing;
+  auto text_width = text.length() * kCharWidth * 2;
+  if (text_width < kContentWidth) {
+    x = (kWidth - text_width) / 2;
+  }
+  SSD1306_->setCursor(x, kContentOffsetTop + kLineHeight);
+  SSD1306_->println(text);
+  SSD1306_->display();
+}
+
+
+void Display::DrawContentTeaserDoubleLine(const String& line_1, const String& line_2) {
+  if (!initialized_ && !Initialize()) {
+    return;
+  }
+  ClearContent();
+
+  SSD1306_->invertDisplay(false);
+  SSD1306_->setTextColor(SSD1306_WHITE);
+  SSD1306_->setTextSize(2);
+  int16_t x = kContentSpacing;
+  auto text_width = line_1.length() * kCharWidth * 2;
+  if (text_width < kContentWidth) {
+    x = (kWidth - text_width) / 2;
+  }
+  SSD1306_->setCursor(x, kContentOffsetTop + kContentSpacing);
+  SSD1306_->println(line_1);
+  text_width = line_2.length() * kCharWidth * 2;
+  if (text_width < kContentWidth) {
+    x = (kWidth - text_width) / 2;
+  }
+  SSD1306_->setCursor(x, kContentOffsetTop + 2*kLineHeight + kSpacing);
+  SSD1306_->println(line_2);
+  SSD1306_->display();
+}
+
+
 void Display::DrawContentTeaser(const String& text) {
   if (!initialized_ && !Initialize()) {
     return;

@@ -156,6 +156,20 @@ class Display {
      */
     void DrawContentTeaser(const String& text);
 
+    /**
+     * @brief Display a large teaser message in the center of the content section.
+     * 
+     * @param text the text to display.
+     */
+    void DrawContentTeaserSingleLine(const String& text);
+
+    /**
+     * @brief Display a large teaser message in the center of the content section.
+     * 
+     * @param text the text to display.
+     */
+    void DrawContentTeaserDoubleLine(const String& line_1, const String& line_2);
+
     // TODO: This method declaration may change depending on the information we need to display.
     /**
      * @brief Display detailed information of a given tacton.

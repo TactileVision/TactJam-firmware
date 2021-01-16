@@ -23,17 +23,18 @@ void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
         //if ( loop_playback == true )
         //  display->DrawContentTeaser("idle");
         //else
-          display->DrawContentTeaser("idle");
+          display->DrawContentTeaserSingleLine("idle");
         actuator_driver->Update(0, 0);
         button_leds->Update(0);
         break;
       case State::playing:
         if ( loop_playback == true )
-          display->DrawContentTeaser("play\nloop on");
+          display->DrawContentTeaserDoubleLine("play", "loop on");
         else
-          display->DrawContentTeaser("play\nloop off");
+          display->DrawContentTeaserDoubleLine("play", "loop off");
         break;
-      case State::recording: display->DrawContentTeaser("rec"); break;
+      case State::recording: display->DrawContentTeaserSingleLine("rec");
+        break;
     }
   }
   this->state = state;
