@@ -41,7 +41,7 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
   }
   if (active_positions == 0 || amplitude == 0) {
     for (uint8_t idx = 0; idx < 8; idx++) {
-      pwm_driver_->setPWM(7-idx, 0, 0);
+      pwm_driver_->setPWM(config::kActuatorMapping[7-idx], 0, 0);
     }
     active_positions_old = active_positions;
     return;
@@ -51,7 +51,7 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
     for (uint8_t idx = 0; idx < 8; idx++) {
       if ((((active_positions_old >> idx)%2) == 0) &&
          ((active_positions >> idx)%2) == 1) {
-        pwm_driver_->setPWM(7-idx, 0, kMaxAmplitude);
+        pwm_driver_->setPWM(config::kActuatorMapping[7-idx], 0, kMaxAmplitude);
         overdrive_activated = true;
       }
     }
@@ -62,9 +62,9 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
   }
   for (uint8_t idx = 0; idx < 8; idx++) {
     if (((active_positions >> idx)%2) == 0) {
-      pwm_driver_->setPWM(7-idx, 0, 0);
+      pwm_driver_->setPWM(config::kActuatorMapping[7-idx], 0, 0);
     } else {
-      pwm_driver_->setPWM(7-idx, 0, amplitude);
+      pwm_driver_->setPWM(config::kActuatorMapping[7-idx], 0, amplitude);
     }
   }
   active_positions_old = active_positions;
