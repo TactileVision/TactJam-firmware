@@ -17,25 +17,26 @@ TactonRecorderPlayer::TactonRecorderPlayer(tact::Display* display, PCA9685* actu
 
 void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
   if (state != this->state || force_display_update == true) {
+    std::string line_1;
+    std::string line_2;
     switch(state) {
       case State::idle: 
-        
-        //if ( loop_playback == true )
-        //  display->DrawContentTeaser("idle");
-        //else
-          display->DrawContentTeaserSingleLine("idle");
+        line_1.assign("idle");
         actuator_driver->Update(0, 0);
         button_leds->Update(0);
         break;
       case State::playing:
-        if ( loop_playback == true )
-          display->DrawContentTeaserDoubleLine("play", "loop on");
-        else
-          display->DrawContentTeaserDoubleLine("play", "loop off");
+        line_1.assign("play");
         break;
-      case State::recording: display->DrawContentTeaserSingleLine("rec");
+      case State::recording:
+        line_1.assign("rec");
         break;
     }
+    if ( loop_playback == true )
+      line_2.assign("loop on");
+    else
+      line_2.assign("loop off");
+    display->DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
   }
   this->state = state;
 }
@@ -86,8 +87,8 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
 
 
 void TactonRecorderPlayer::LoopButtonPressed(tact::Buzzer &buzzer) {
-  if (state != State::playing)
-    return;
+  //if (state != State::playing)
+  //  return;
   loop_playback = !loop_playback;
   buzzer.PlayConfirm();
   SetState(state, true);
