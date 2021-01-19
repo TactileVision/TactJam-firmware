@@ -26,6 +26,11 @@ const uint8_t kERMOverdriveDuration = 20;
 const uint8_t kBuzzerID = 8;
 #endif
 
+#if TACT_BOARD_REV==0
+const uint8_t kActuatorMapping[] = {0,1,2,3,4,5,6,7};
+#elif TACT_BOARD_REV==1
+const uint8_t kActuatorMapping[] = {0,1,2,3,8,9,10,11};
+#endif //TACT_BOARD_REV
 
 namespace esp {
 namespace pins {
