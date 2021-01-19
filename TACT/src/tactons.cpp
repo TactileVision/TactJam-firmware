@@ -61,7 +61,7 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
   }
   tactons.at(current_state.slot).tacton_samples.clear();
   //tactons.at(current_state.slot).tacton_samples.reserve(TACTON_SAMPLES_MAX);
-  time_start_milliseconds = millis();
+  time_start_milliseconds = 0;
   SetState(State::recording);
 
   buzzer.PlayConfirm();
@@ -110,6 +110,10 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 
   if ( current_state.slot >= TACTONS_COUNT_MAX)
     return;
+
+  //this avoids a time gap between start record and first actuator button press
+  if (time_start_milliseconds == 0)
+    time_start_milliseconds = millis();
 
   TactonSample tactonSample;
   tactonSample.time_milliseconds = millis() - time_start_milliseconds;
