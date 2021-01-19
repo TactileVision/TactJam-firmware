@@ -1,0 +1,3 @@
+[submodule "TACT/lib/libvtp"]
+	path = TACT/lib/libvtp
+	url = https://github.com/lhinderberger/libvtp.git
