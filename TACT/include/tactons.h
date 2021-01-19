@@ -10,6 +10,10 @@
 #include "display.h"
 #include "state.h"
 
+extern "C" {
+#include <vtp/codec.h>
+}
+
 namespace tact {
 
 //#define TACTON_SAMPLES_MAX 10000
@@ -47,6 +51,12 @@ class TactonRecorderPlayer {
     void RecordSample(tact::State &current_state, tact::Buzzer &buzzer);
     void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder);
 
+    void ToVTP(uint8_t slot);
+    void TransferVTPInstructionToPC(VTPInstructionWord* encodedInstructionWord);
+    /**
+     *  @param index_of_instruction used for initialisation if index is 0 and may be used for debugging
+     */
+    void FromVTP(uint8_t slot, VTPInstructionWord* encodedInstructionWord, uint32_t index_of_instruction);
 
   private:
     std::vector<Tacton> tactons;
@@ -58,6 +68,10 @@ class TactonRecorderPlayer {
     uint32_t index_play_next = 0;
     State state = State::idle; // use method SetState to change the state
     bool loop_playback = false;
+
+    //VTP based variables
+    unsigned long time_vtp_instruction_milliseconds = 0;
+    uint32_t index_vtp_instruction = 0;
 };
 
 

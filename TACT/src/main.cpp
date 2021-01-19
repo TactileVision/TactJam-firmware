@@ -210,10 +210,7 @@ void HandleJamMode() {
 
 
 void HandleRecPlayMode() {
-  // TODO: play selected tacton (#5): https://github.com/TactileVision/TactJam-firmware/issues/5
-      // TODO: toggle loop mode (#9): https://github.com/TactileVision/TactJam-firmware/issues/9
-  // TODO: record tacton (#3): https://github.com/TactileVision/TactJam-firmware/issues/3
-      // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
+  // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
   // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
   ReadButtons();
 
@@ -259,8 +256,17 @@ void HandleRecPlayMode() {
 void HandleDataTransferMode() {
   // TODO: receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
   // TODO: send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
+  ReadButtons();
+  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+      //menu button 1 pressed
+      buzzer.PlayConfirm();
+      tactonRecorderPlayer.ToVTP(current_state.slot);
+      buzzer.PlayConfirm();
+    }
+  }
   #ifdef TACT_DEBUG
-  Serial.println("Transfer Mode is not implemented yet");
+  //Serial.println("Transfer Mode is not implemented yet");
   #endif //TACT_DEBUG
-  delay(2000);
+  delay(2);
 }
