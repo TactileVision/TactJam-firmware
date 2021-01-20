@@ -154,7 +154,17 @@ class Display {
      * 
      * @param text the text to display.
      */
-    void DrawContentTeaser(const String& text);
+    void DrawContentTeaserSingleLine(const String& text);
+
+    /**
+     * @brief Display a large teaser message in the center of the content section.
+     * 
+     * @param line_1 the text to display.
+     * @param line_2 the text to display.
+     */
+    void DrawContentTeaserDoubleLine(const String& line_1, const String& line_2);
+
+    void ClearContentTeaser();
 
     // TODO: This method declaration may change depending on the information we need to display.
     /**

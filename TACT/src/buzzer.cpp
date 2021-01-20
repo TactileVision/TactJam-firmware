@@ -60,6 +60,18 @@ void Buzzer::PlayInitSequence() {
   NoTone(50);
 }
 
+void Buzzer::PlayConfirm() {
+  Tone(50);
+  NoTone(10);
+}
+
+void Buzzer::PlayFail() {
+  Tone(150);
+  NoTone(20);
+  Tone(150);
+  NoTone(20);
+}
+
 #else
 
 Buzzer::Buzzer(uint8_t pin, uint8_t pwm_channel) {
@@ -111,6 +123,18 @@ void Buzzer::PlayInitSequence() {
   NoTone(100);
   Tone(500, 300);
   NoTone(100);
+}
+
+void Buzzer::PlayConfirm() {
+  Tone(50, 100);
+  NoTone(10);
+}
+
+void Buzzer::PlayFail() {
+  Tone(150, 100);
+  NoTone(20);
+  Tone(150, 100);
+  NoTone(20);
 }
 #endif //__TACT_BUZZER_MULTIPLEXER__
 

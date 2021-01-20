@@ -47,6 +47,14 @@ class LinearEncoder {
     uint8_t GetPercent(bool update = true);
 
     /**
+     * @brief Get the amplitude from percent.
+     * 
+     * @param percent Percent value to be converted
+     * @return uint16_t the amplitude
+     */
+    uint16_t PercentToLinearEncoder(uint8_t percent);
+
+    /**
      * @brief  Get the amplitude as 8bit value (0-255).
      * 
      * @param update If true a new measurement is taken before returning the value.

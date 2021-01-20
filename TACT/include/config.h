@@ -18,7 +18,7 @@ const auto kDebugLevel = (TACT_DEBUG == 1) ? DebugLevel::basic : DebugLevel::ver
 const auto kSerialBaudRate = 115200;
 const uint8_t kInitializationDelay = 20;
 
-const uint8_t kERMOverdriveDuration = 40;
+const uint8_t kERMOverdriveDuration = 20;
 
 // The dev-board v0.2 has the buzzer attached to the PWM multiplexer.
 #if TACT_BOARD_REV==0
@@ -26,6 +26,11 @@ const uint8_t kERMOverdriveDuration = 40;
 const uint8_t kBuzzerID = 8;
 #endif //TACT_BOARD_RE
 
+#if TACT_BOARD_REV==0
+const uint8_t kActuatorMapping[] = {0,1,2,3,4,5,6,7};
+#elif TACT_BOARD_REV==1
+const uint8_t kActuatorMapping[] = {0,1,2,3,8,9,10,11};
+#endif //TACT_BOARD_REV
 
 namespace esp {
 namespace pins {

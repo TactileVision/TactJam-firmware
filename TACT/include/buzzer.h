@@ -52,6 +52,10 @@ class Buzzer {
      * 
      */
     void PlayInitSequence();
+
+    void PlayConfirm();
+
+    void PlayFail();
 #else
     Buzzer() = delete;
     Buzzer(uint8_t pin, uint8_t pwm_channel = 0);
@@ -83,6 +87,10 @@ class Buzzer {
      * 
      */
     void PlayInitSequence();
+
+    void PlayConfirm();
+
+    void PlayFail();
 #endif //__TACT_BUZZER_MULTIPLEXER__
 };
 
