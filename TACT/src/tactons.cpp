@@ -75,6 +75,12 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
 void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
   actuator_driver->Update(0, 0);
   button_leds->Update(0);
+  if (state == State::playing) {
+    SetState(State::idle);
+    buzzer.PlayConfirm();
+    buzzer.PlayConfirm();
+    return;
+  }
   buzzer.PlayConfirm();
   time_start_milliseconds = millis();
   SetState(State::playing);
