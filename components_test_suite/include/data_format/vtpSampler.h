@@ -87,7 +87,7 @@ public:
       return;
     }
     if (time_elapsed_ - time_last_write_ > 1023) {
-      Serial.println("increment time");
+      Serial.printf("increment time: %d\n", time_elapsed_ - time_last_write_);
       VTPInstructionV1 instruction;
       instruction.code = VTP_INST_INCREMENT_TIME;
       instruction.params.format_a.parameter_a = time_elapsed_ - time_last_write_;
@@ -108,7 +108,7 @@ public:
       for (uint8_t i = 0; i < 8; i++) {
         auto last_state = bitRead(active_buttons_, i);
         if (last_state == 1) {
-          Serial.printf("%d:%d\t", i, mapped_amplitude);
+          Serial.printf("act:%d amp:%d dT:%d\t", 8-i, mapped_amplitude, time_elapsed_ - time_last_write_);
           VTPInstructionV1 instruction;
           instruction.code = VTP_INST_SET_AMPLITUDE;
           instruction.params.format_b.channel_select = i;
@@ -125,7 +125,7 @@ public:
       Initialize();
     }
     if (time_elapsed_ - time_last_write_ > 1023) {
-      Serial.println("increment time");
+      Serial.printf("increment time: %d\n", time_elapsed_ - time_last_write_);
       VTPInstructionV1 instruction;
       instruction.code = VTP_INST_INCREMENT_TIME;
       instruction.params.format_a.parameter_a = time_elapsed_ - time_last_write_;
@@ -134,7 +134,7 @@ public:
 
     auto mapped_amplitude = (uint32_t)map(amplitude_, 0, 4095, 0, 1023);
     if (active_buttons_ == 0xFF) {
-      Serial.printf("all:%d\t", mapped_amplitude);
+      Serial.printf("act:all amp:%d dT:%d\t", mapped_amplitude, time_elapsed_ - time_last_write_);
       VTPInstructionV1 instruction;
       instruction.code = VTP_INST_SET_AMPLITUDE;
       instruction.params.format_b.channel_select = 0;
@@ -148,7 +148,7 @@ public:
         auto new_state = bitRead(active_buttons, i);
         if (last_state != new_state) {
           uint32_t new_amplitude = (new_state == 1) ? mapped_amplitude : 0;
-          Serial.printf("%d:%d\t", i, new_amplitude);
+          Serial.printf("act:%d amp:%d dT:%d\t", 8-i, new_amplitude, time_elapsed_ - time_last_write_);
           VTPInstructionV1 instruction;
           instruction.code = VTP_INST_SET_AMPLITUDE;
           instruction.params.format_b.channel_select = i;
