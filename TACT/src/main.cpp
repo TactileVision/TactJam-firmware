@@ -12,6 +12,7 @@
 #include "PCA9685.h"
 #include "buzzer.h"
 #include "tactons.h"
+#include <dataTransfer.h>
 
 tact::State current_state;
 tact::State previous_state;
@@ -35,7 +36,8 @@ tact::Buzzer buzzer;
 #else
 tact::Buzzer buzzer(tact::config::esp::pins::kBuzzer);
 #endif
-tact::TactonRecorderPlayer tactonRecorderPlayer(&display, &actuator_driver, &button_leds);
+tact::TactonRecorderPlayer tacton_recorder_player(&display, &actuator_driver, &button_leds);
+tact::DataTransfer data_transfer(&current_state, &display, &buzzer, &tacton_recorder_player);
 
 
 /**
@@ -110,6 +112,7 @@ void setup() {
   delay(1000);
   
   previous_state = current_state;
+  previous_state.mode = tact::Modes::undefined; //hence mode change will recognised
 
   tact::config::esp::DisableRadios();
 }
@@ -178,7 +181,7 @@ void ReadButtons() {
     current_state.pressed_menu_buttons = (current_state.pressed_buttons >> 5u) & 0x7u;
   
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
+    if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
       if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
         Serial.print("active actuator buttons BIN: ");
         Serial.print(current_state.pressed_actuator_buttons, BIN);
@@ -218,32 +221,32 @@ void HandleRecPlayMode() {
 
   if (current_state.slot != previous_state.slot ||
     current_state.mode != previous_state.mode) {
-    tactonRecorderPlayer.Reset();
+    tacton_recorder_player.Reset();
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ( (previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
-      tactonRecorderPlayer.RecordButtonPressed(current_state, buzzer);
+      tacton_recorder_player.RecordButtonPressed(current_state, buzzer);
     }
     if ( (previous_state.pressed_menu_buttons & 2) == 2) {
-      //menu button 1 pressed, start record
-      tactonRecorderPlayer.PlayButtonPressed(buzzer);
+      //menu button 2 pressed, play
+      tacton_recorder_player.PlayButtonPressed(buzzer);
     }
     if ( (previous_state.pressed_menu_buttons & 1) == 1) {
       //menu button 3 pressed, switch loop
-      tactonRecorderPlayer.LoopButtonPressed(buzzer);
+      tacton_recorder_player.LoopButtonPressed(buzzer);
     }
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    tactonRecorderPlayer.RecordSample(current_state, buzzer);
+    tacton_recorder_player.RecordSample(current_state, buzzer);
   }
   if (previous_state.amplitude != current_state.amplitude &&
     current_state.pressed_actuator_buttons != 0) {
-    tactonRecorderPlayer.RecordSample(current_state, buzzer);
+    tacton_recorder_player.RecordSample(current_state, buzzer);
   }
-  tactonRecorderPlayer.PlaySample(current_state, buzzer, amplitude_encoder);
+  tacton_recorder_player.PlaySample(current_state, buzzer, amplitude_encoder);
 
 
   //#ifdef TACT_DEBUG
@@ -259,16 +262,28 @@ void HandleDataTransferMode() {
   // TODO: receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
   // TODO: send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
   ReadButtons();
+
+  if (current_state.slot != previous_state.slot ||
+    current_state.mode != previous_state.mode) {
+    data_transfer.Reset();
+  }
+
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ( (previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed
-      buzzer.PlayConfirm();
-      tactonRecorderPlayer.ToVTP(current_state.slot);
-      buzzer.PlayConfirm();
+      data_transfer.SendButtonPressed();
+    }
+    if ( (previous_state.pressed_menu_buttons & 2) == 2) {
+      //menu button 2 pressed
+      data_transfer.ReceiveButtonPressed();
     }
   }
-  #ifdef TACT_DEBUG
+
+  data_transfer.Receive();
+
+  //#ifdef TACT_DEBUG
   //Serial.println("Transfer Mode is not implemented yet");
-  #endif //TACT_DEBUG
+  //#endif //TACT_DEBUG
+
   delay(2);
 }

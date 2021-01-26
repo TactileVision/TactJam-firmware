@@ -51,12 +51,12 @@ class TactonRecorderPlayer {
     void RecordSample(tact::State &current_state, tact::Buzzer &buzzer);
     void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder);
 
-    void ToVTP(uint8_t slot);
-    void TransferVTPInstructionToPC(VTPInstructionWord* encodedInstructionWord);
+    void ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out);
+    void AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out);
     /**
      *  @param index_of_instruction used for initialisation if index is 0 and may be used for debugging
      */
-    void FromVTP(uint8_t slot, VTPInstructionWord* encodedInstructionWord, uint32_t index_of_instruction);
+    int FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction);
 
   private:
     std::vector<Tacton> tactons;

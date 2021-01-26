@@ -45,7 +45,7 @@ void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
 void TactonRecorderPlayer::Reset()  {
   SetState(State::idle, true);
   #ifdef TACT_DEBUG
-  Serial.println("actonRecorderPlayer::Reset");
+  Serial.print("TactonRecorderPlayer::Reset\n");
   #endif //TACT_DEBUG
 }
 
@@ -67,7 +67,7 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
   buzzer.PlayConfirm();
 
   #ifdef TACT_DEBUG
-  Serial.printf("RecordButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
+  Serial.printf("TactonRecorderPlayer::RecordButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
   #endif //TACT_DEBUG
 }
 
@@ -87,7 +87,7 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
   index_play_next = 0;
 
   #ifdef TACT_DEBUG
-  Serial.printf("PlayButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
+  Serial.printf("TactonRecorderPlayer::PlayButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
   #endif //TACT_DEBUG
 }
 
@@ -177,7 +177,7 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
 }
 
 
-void TactonRecorderPlayer::ToVTP(uint8_t slot) {
+void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
   index_vtp_instruction = 0;
 
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
@@ -199,14 +199,15 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot) {
       instruction.params.format_a.parameter_a = time_diff;
 
       #ifdef TACT_DEBUG
-      Serial.printf("  VTP_INST_INCREMENT_TIME parameter_a=%ld\n", instruction.params.format_a.parameter_a);
+      if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose)
+        Serial.printf("  VTP_INST_INCREMENT_TIME parameter_a=%ld\n", instruction.params.format_a.parameter_a);
       #endif //TACT_DEBUG
 
       if (vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK ) {
         Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
         return;
       }
-      TransferVTPInstructionToPC(&encodedInstruction);
+      AddVTPInstruction(&encodedInstruction, vector_out);
     }
     
     for (uint8_t idx = 0; idx < 8; idx++) {
@@ -217,14 +218,15 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot) {
         instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? tacton_sample->amplitude_percent * 10:0;
       
         #ifdef TACT_DEBUG
-        Serial.printf("  VTP_INST_SET_AMPLITUDE time_offset=%d  channel_select=%d  parameter_a=%d\n", instruction.params.format_b.time_offset, instruction.params.format_b.channel_select, instruction.params.format_b.parameter_a);
+        if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose)
+          Serial.printf("  VTP_INST_SET_AMPLITUDE time_offset=%d  channel_select=%d  parameter_a=%d\n", instruction.params.format_b.time_offset, instruction.params.format_b.channel_select, instruction.params.format_b.parameter_a);
         #endif //TACT_DEBUG
 
         if ( vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK) {
           Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
           return;
         }
-        TransferVTPInstructionToPC(&encodedInstruction);
+        AddVTPInstruction(&encodedInstruction, vector_out);
       }
     }
  
@@ -233,23 +235,26 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot) {
 }
 
 
-void TactonRecorderPlayer::TransferVTPInstructionToPC(VTPInstructionWord* encodedInstructionWord) {
+void TactonRecorderPlayer::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out) {
   unsigned char buffer[4];
-  vtp_write_instruction_words(1, encodedInstructionWord, buffer);
-  //TODO: write instruction word to PC connection
-  //Serial.write(buffer, 4);
+  vtp_write_instruction_words(1, encoded_instruction_word, buffer);
 
-  { //decoding test to slot 2
-    VTPInstructionWord out;
-    vtp_read_instruction_words(1, buffer, &out);
-    FromVTP(2, &out, index_vtp_instruction);
-  }
+  vector_out.push_back(buffer[0]);
+  vector_out.push_back(buffer[1]);
+  vector_out.push_back(buffer[2]);
+  vector_out.push_back(buffer[3]);
+
+  //{ //decoding test to slot 2
+  //  VTPInstructionWord out;
+  //  vtp_read_instruction_words(1, buffer, &out);
+  //  FromVTP(2, &out, index_vtp_instruction);
+  //}
 
   index_vtp_instruction++; //value is resetted in ToVTP(..)
 }
 
 
-void TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encodedInstructionWord, uint32_t index_of_instruction) {
+int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction) {
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
   if ( index_of_instruction == 0 ) {
     time_vtp_instruction_milliseconds = 0;
@@ -257,9 +262,10 @@ void TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encodedInst
   }
 
   VTPInstructionV1 instruction;
-  if ( vtp_decode_instruction_v1(*encodedInstructionWord, &instruction) != VTP_OK) {
+  if ( vtp_decode_instruction_v1(*encoded_instruction_word, &instruction) != VTP_OK) {
+    tacton_samples->clear();
     Serial.printf("ERROR: vtp_decode_instruction_v1 != VTP_OK\n");
-    return;
+    return -1;
   }
 
   TactonSample* tacton_sample;
@@ -282,12 +288,20 @@ void TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encodedInst
       tacton_sample->buttons_state |= (1 << button);
       tacton_sample->amplitude_percent = amplitude / 10;
     }
-  } else Serial.printf("ERROR: instruction.code not implemented\n");
+  } else {
+    tacton_samples->clear();
+    Serial.printf("ERROR: instruction.code not implemented\n");
+    return -2;
+  }
   
   #ifdef TACT_DEBUG
-  Serial.printf(" FromVTP sample %d: ", tacton_samples->size());
-  tacton_samples->at(tacton_samples->size()-1).SerialPrint();
+  if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
+    Serial.printf(" FromVTP sample %d: ", tacton_samples->size());
+    tacton_samples->at(tacton_samples->size()-1).SerialPrint();
+  }
   #endif //TACT_DEBUG
+
+  return 0;
 }
 
 } // namespace tact
