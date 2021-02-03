@@ -45,6 +45,7 @@ class TactonRecorderPlayer {
 
     void SetState(State state, bool force_display_update = false);
     void Reset();
+    void DeleteTacton(uint8_t slot);
     void RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer);
     void PlayButtonPressed(tact::Buzzer &buzzer);
     void LoopButtonPressed(tact::Buzzer &buzzer);

@@ -50,6 +50,14 @@ void TactonRecorderPlayer::Reset()  {
 }
 
 
+void TactonRecorderPlayer::DeleteTacton(uint8_t slot) {
+  if (slot > TACTONS_COUNT_MAX) {
+    return;
+  }
+  tactons.at(slot).tacton_samples.clear();
+}
+
+
 void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer) {
   actuator_driver->Update(0, 0);
   button_leds->Update(0);
