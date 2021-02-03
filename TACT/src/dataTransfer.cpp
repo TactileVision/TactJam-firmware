@@ -183,7 +183,7 @@ void DataTransfer::SendButtonPressed(void) {
   for (int i = 0; i < vector_data_out.size(); i++)
     Serial.write(vector_data_out.at(i));
   Serial.write("</tacton>");
-  Serial.write("\n");
+  //Serial.write("\n");
   buzzer->PlayConfirm();
   SetState(State::idle, "");
 }
