@@ -64,11 +64,15 @@ void DataTransfer::Receive(void) {
 
     if (string_return.rfind("ERROR", 0) == 0) {
       buzzer->PlayFail();
+      #ifdef TACT_DEBUG
       Serial.printf("%s\n", string_return.c_str());
+      #endif //TACT_DEBUG
     }
     else {
       buzzer->PlayConfirm();
+      #ifdef TACT_DEBUG
       Serial.printf("done: %s\n", string_return.c_str());
+      #endif //TACT_DEBUG
     }
 
     vector_in.clear();

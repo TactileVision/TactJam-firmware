@@ -204,7 +204,9 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vecto
       #endif //TACT_DEBUG
 
       if (vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK ) {
+        #ifdef TACT_DEBUG
         Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
+        #endif //TACT_DEBUG
         return;
       }
       AddVTPInstruction(&encodedInstruction, vector_out);
@@ -223,7 +225,9 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vecto
         #endif //TACT_DEBUG
 
         if ( vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK) {
+          #ifdef TACT_DEBUG
           Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
+          #endif //TACT_DEBUG
           return;
         }
         AddVTPInstruction(&encodedInstruction, vector_out);
@@ -264,7 +268,9 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
   VTPInstructionV1 instruction;
   if ( vtp_decode_instruction_v1(*encoded_instruction_word, &instruction) != VTP_OK) {
     tacton_samples->clear();
+    #ifdef TACT_DEBUG
     Serial.printf("ERROR: vtp_decode_instruction_v1 != VTP_OK\n");
+    #endif //TACT_DEBUG
     return -1;
   }
 
@@ -290,7 +296,9 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
     }
   } else {
     tacton_samples->clear();
+    #ifdef TACT_DEBUG
     Serial.printf("ERROR: instruction.code not implemented\n");
+    #endif //TACT_DEBUG
     return -2;
   }
   
