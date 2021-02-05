@@ -131,6 +131,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
         return "ERROR 5";
 
   unsigned char buffer[4];
+  int index_vtp = 0;
   for ( int i = length_overhead_start; i < vector_in.size() - string_suffix.size(); i+=4) {
     buffer[0] = vector_in.at(i + 0);
     buffer[1] = vector_in.at(i + 1);
@@ -139,7 +140,8 @@ std::string DataTransfer::ProcessReceivedData(void) {
 
     VTPInstructionWord out;
     vtp_read_instruction_words(1, buffer, &out);
-    int result = tacton_recorder_player->FromVTP(current_state->slot, &out, i);
+    int result = tacton_recorder_player->FromVTP(current_state->slot, &out, index_vtp);
+    index_vtp++;
     if (result != 0 ) {
       std::ostringstream ss_out;
       ss_out << "ERROR "  << result;
