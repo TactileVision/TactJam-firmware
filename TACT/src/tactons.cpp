@@ -1,4 +1,5 @@
 #include <tactons.h>
+#include <sstream>
 
 namespace tact {
 
@@ -197,8 +198,10 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vecto
     TactonSample *tacton_sample = &tacton_samples->at(i);
 
     #ifdef TACT_DEBUG
-    Serial.printf("ToVTP sample %d/%d: ", i + 1, tacton_samples->size());
-    tacton_sample->SerialPrint();
+    if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
+      Serial.printf("ToVTP sample %d/%d: ", i + 1, tacton_samples->size());
+      tacton_sample->SerialPrint();
+    }
     #endif //TACT_DEBUG
 
     uint32_t time_diff = tacton_sample->time_milliseconds - tacton_sample_previous.time_milliseconds;
@@ -318,6 +321,19 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
   #endif //TACT_DEBUG
 
   return 0;
+}
+
+
+std::string TactonRecorderPlayer::GetTactonListAsString(void) {
+  std::ostringstream ss_out;
+  for (int i = 0; i < tactons.size(); i++) {
+    if (tactons.at(i).tacton_samples.size() > 0 ) {
+      if (ss_out.str().empty() == false)
+       ss_out << ",";
+      ss_out << i;
+    }
+  }
+  return ss_out.str();
 }
 
 } // namespace tact

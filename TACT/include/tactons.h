@@ -17,7 +17,7 @@ extern "C" {
 namespace tact {
 
 //#define TACTON_SAMPLES_MAX 10000
-#define TACTONS_COUNT_MAX 8
+#define TACTONS_COUNT_MAX 4
 
 class TactonSample {
   public:
@@ -58,6 +58,7 @@ class TactonRecorderPlayer {
      *  @param index_of_instruction used for initialisation if index is 0 and may be used for debugging
      */
     int FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction);
+    std::string GetTactonListAsString(void);
 
   private:
     std::vector<Tacton> tactons;

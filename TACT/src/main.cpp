@@ -259,8 +259,6 @@ void HandleRecPlayMode() {
 
 
 void HandleDataTransferMode() {
-  // TODO: receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
-  // TODO: send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
   ReadButtons();
 
   if (current_state.slot != previous_state.slot ||
@@ -271,11 +269,11 @@ void HandleDataTransferMode() {
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ( (previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed
-      data_transfer.SendButtonPressed();
+      data_transfer.SendButtonPressed(current_state.slot);
     }
     if ( (previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed
-      data_transfer.ReceiveButtonPressed();
+      data_transfer.ReceiveButtonPressed(current_state.slot);
     }
   }
 

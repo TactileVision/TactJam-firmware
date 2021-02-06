@@ -21,16 +21,19 @@ class DataTransfer {
 
     void SetState(State state, std::string line_2, bool force_display_update = false);
     void Reset(void);
-    void ReceiveButtonPressed(void);
+    void ReceiveButtonPressed(int slot);
     void Receive(void);
-    std::string GetDataAsString(int index, int length, uint8_t char_stop);
+    void ReceiveIdleMode(void);
+    std::string GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/);
     std::string ProcessReceivedData(void);
-    void SendButtonPressed(void);
+    void SendButtonPressed(int slot);
 
   private:
     State state = State::idle; // use method SetState to change the state
     std::vector<uint8_t> vector_in;
     unsigned long time_last_receive;
+    std::string string_received;
+    int receive_slot = 0;
 
     tact::State* current_state;
     tact::Display* display;
