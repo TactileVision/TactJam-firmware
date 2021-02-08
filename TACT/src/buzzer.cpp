@@ -44,9 +44,9 @@ void Buzzer::Tone(uint32_t length) {
     Initialize();
   }
   PCA9685_->setPWM(pin_, 0, 3000);
-  if (length>1) {
-      delay(length);
-      NoTone(0);
+  if (length > 1) {
+    delay(length);
+    NoTone(0);
   }    
 }
 
@@ -99,9 +99,9 @@ void Buzzer::Tone(double frequency, uint32_t length) {
   }
   ledcAttachPin(pin_, pwm_channel_);
   ledcWriteTone(pwm_channel_, frequency);
-  if (length>1) {
-      delay(length);
-      NoTone(0);
+  if (length > 1) {
+    delay(length);
+    NoTone(0);
   }    
 }
 

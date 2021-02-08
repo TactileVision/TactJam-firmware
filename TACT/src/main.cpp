@@ -147,8 +147,7 @@ void loop() {
     #endif //TACT_DEBUG
   }
 
-  if (current_state.slot != previous_state.slot ||
-    current_state.mode != previous_state.mode) {
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
     actuator_driver.Update(0, 0);
     button_leds.Update(0);
     display.ClearContentTeaser();
@@ -219,21 +218,20 @@ void HandleRecPlayMode() {
   // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
   ReadButtons();
 
-  if (current_state.slot != previous_state.slot ||
-    current_state.mode != previous_state.mode) {
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
     tacton_recorder_player.Reset();
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+    if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
       tacton_recorder_player.RecordButtonPressed(current_state, buzzer);
     }
-    if ( (previous_state.pressed_menu_buttons & 2) == 2) {
+    if ((previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed, play
       tacton_recorder_player.PlayButtonPressed(buzzer);
     }
-    if ( (previous_state.pressed_menu_buttons & 1) == 1) {
+    if ((previous_state.pressed_menu_buttons & 1) == 1) {
       //menu button 3 pressed, switch loop
       tacton_recorder_player.LoopButtonPressed(buzzer);
     }
@@ -242,8 +240,7 @@ void HandleRecPlayMode() {
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
     tacton_recorder_player.RecordSample(current_state, buzzer);
   }
-  if (previous_state.amplitude != current_state.amplitude &&
-    current_state.pressed_actuator_buttons != 0) {
+  if ((previous_state.amplitude != current_state.amplitude) && (current_state.pressed_actuator_buttons != 0)) {
     tacton_recorder_player.RecordSample(current_state, buzzer);
   }
   tacton_recorder_player.PlaySample(current_state, buzzer, amplitude_encoder);
@@ -261,27 +258,22 @@ void HandleRecPlayMode() {
 void HandleDataTransferMode() {
   ReadButtons();
 
-  if (current_state.slot != previous_state.slot ||
-    current_state.mode != previous_state.mode) {
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
     data_transfer.Reset();
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+    if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed
       data_transfer.SendButtonPressed(current_state.slot);
     }
-    if ( (previous_state.pressed_menu_buttons & 2) == 2) {
+    if ((previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed
       data_transfer.ReceiveButtonPressed(current_state.slot);
     }
   }
 
   data_transfer.Receive();
-
-  //#ifdef TACT_DEBUG
-  //Serial.println("Transfer Mode is not implemented yet");
-  //#endif //TACT_DEBUG
 
   delay(2);
 }

@@ -17,7 +17,7 @@ TactonRecorderPlayer::TactonRecorderPlayer(tact::Display* display, PCA9685* actu
 
 
 void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
-  if (state != this->state || force_display_update == true) {
+  if ((state != this->state) || (force_display_update == true)) {
     std::string line_1;
     std::string line_2;
     switch(state) {
@@ -33,10 +33,12 @@ void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
         line_1.assign("rec");
         break;
     }
-    if ( loop_playback == true )
+    if (loop_playback == true) {
       line_2.assign("loop on");
-    else
+    }
+    else {
       line_2.assign("loop off");
+    }
     display->DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
   }
   this->state = state;
@@ -114,17 +116,19 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 
   if ( state != State::recording) {
     //actuator button is only allowed during recording
-    if ( current_state.pressed_actuator_buttons != 0)
+    if (current_state.pressed_actuator_buttons != 0) {
       buzzer.PlayFail();
+    }
     return;
   }
 
-  if ( current_state.slot >= TACTONS_COUNT_MAX)
+  if (current_state.slot >= TACTONS_COUNT_MAX) {
     return;
-
+  }
   //this avoids a time gap between start record and first actuator button press
-  if (time_start_milliseconds == 0)
+  if (time_start_milliseconds == 0) {
     time_start_milliseconds = millis();
+  }
 
   TactonSample tactonSample;
   tactonSample.time_milliseconds = millis() - time_start_milliseconds;
@@ -144,23 +148,25 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 
 void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder) {
 
-  if ( state != State::playing) {
+  if (state != State::playing) {
     //buzzer.PlayFail();
     return;
   }
 
-  if ( current_state.slot >= TACTONS_COUNT_MAX)
+  if (current_state.slot >= TACTONS_COUNT_MAX) {
     return;
+  }
 
   std::vector<TactonSample> *tacton_samples  = &tactons.at(current_state.slot).tacton_samples;
 
-  if ( index_play_next >= tacton_samples->size()) {
+  if (index_play_next >= tacton_samples->size()) {
     //last sample has been played
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
     SetState(State::idle);
-    if (loop_playback == true)
+    if (loop_playback == true) {
       PlayButtonPressed(buzzer);
+    }
     return;
   }
 
@@ -170,12 +176,13 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
     if (millis_current >= tacton_samples->at(i).time_milliseconds) {
       tacton_latest = &tacton_samples->at(i);
       index_play_next = i + 1;
-    } else {
+    }
+    else {
       break;
     }
   }
 
-  if ( tacton_latest != NULL ) {
+  if (tacton_latest != NULL) {
     actuator_driver->Update(tacton_latest->buttons_state, amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
     button_leds->Update(tacton_latest->buttons_state);
     #ifdef TACT_DEBUG
@@ -228,14 +235,14 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vecto
         instruction.code = VTP_INST_SET_AMPLITUDE;
         instruction.params.format_b.time_offset = 0;
         instruction.params.format_b.channel_select = idx;
-        instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? tacton_sample->amplitude_percent * 10:0;
+        instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? (tacton_sample->amplitude_percent * 10) : 0;
       
         #ifdef TACT_DEBUG
         if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose)
           Serial.printf("  VTP_INST_SET_AMPLITUDE time_offset=%d  channel_select=%d  parameter_a=%d\n", instruction.params.format_b.time_offset, instruction.params.format_b.channel_select, instruction.params.format_b.parameter_a);
         #endif //TACT_DEBUG
 
-        if ( vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK) {
+        if (vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK) {
           #ifdef TACT_DEBUG
           Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
           #endif //TACT_DEBUG
@@ -271,13 +278,13 @@ void TactonRecorderPlayer::AddVTPInstruction(VTPInstructionWord* encoded_instruc
 
 int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction) {
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
-  if ( index_of_instruction == 0 ) {
+  if (index_of_instruction == 0) {
     time_vtp_instruction_milliseconds = 0;
     tacton_samples->clear();
   }
 
   VTPInstructionV1 instruction;
-  if ( vtp_decode_instruction_v1(*encoded_instruction_word, &instruction) != VTP_OK) {
+  if (vtp_decode_instruction_v1(*encoded_instruction_word, &instruction) != VTP_OK) {
     tacton_samples->clear();
     #ifdef TACT_DEBUG
     Serial.printf("ERROR: vtp_decode_instruction_v1 != VTP_OK\n");
@@ -286,26 +293,30 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
   }
 
   TactonSample* tacton_sample;
-  if (tacton_samples->empty() == true)
+  if (tacton_samples->empty() == true) {
     tacton_samples->push_back(TactonSample());
- 
+  }
+
   tacton_sample = &tacton_samples->at(tacton_samples->size()-1);
 
-  if ( instruction.code == VTP_INST_INCREMENT_TIME) {
+  if (instruction.code == VTP_INST_INCREMENT_TIME) {
     time_vtp_instruction_milliseconds+=instruction.params.format_a.parameter_a;
     TactonSample tacton_sample_new = *tacton_sample;
     tacton_sample_new.time_milliseconds = time_vtp_instruction_milliseconds;
     tacton_samples->push_back(tacton_sample_new);
-  } else if ( instruction.code == VTP_INST_SET_AMPLITUDE) {
+  }
+  else if (instruction.code == VTP_INST_SET_AMPLITUDE) {
     uint8_t button = instruction.params.format_b.channel_select;
     uint16_t amplitude = instruction.params.format_b.parameter_a;
-    if ( amplitude == 0)
+    if (amplitude == 0) {
       tacton_sample->buttons_state &= ~(1 << button);
+    }
     else {
       tacton_sample->buttons_state |= (1 << button);
       tacton_sample->amplitude_percent = amplitude / 10;
     }
-  } else {
+  }
+  else {
     tacton_samples->clear();
     #ifdef TACT_DEBUG
     Serial.printf("ERROR: instruction.code not implemented\n");
@@ -327,9 +338,10 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
 std::string TactonRecorderPlayer::GetTactonListAsString(void) {
   std::ostringstream ss_out;
   for (int i = 0; i < tactons.size(); i++) {
-    if (tactons.at(i).tacton_samples.size() > 0 ) {
-      if (ss_out.str().empty() == false)
-       ss_out << ",";
+    if (tactons.at(i).tacton_samples.size() > 0) {
+      if (ss_out.str().empty() == false) {
+        ss_out << ",";
+      }
       ss_out << i;
     }
   }

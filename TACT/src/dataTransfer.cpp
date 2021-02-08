@@ -9,7 +9,7 @@ DataTransfer::DataTransfer(tact::State* current_state, tact::Display* display, t
 
 
 void DataTransfer::SetState(State state, std::string line_2, bool force_display_update) {
-  if (state != this->state || force_display_update == true) {
+  if ((state != this->state) || (force_display_update == true)) {
     std::string line_1;
     switch(state) {
       case State::idle: 
@@ -41,7 +41,7 @@ void DataTransfer::Reset() {
 
 
 void DataTransfer::ReceiveButtonPressed(int slot) {
-  if ( slot < 1 || slot >= TACTONS_COUNT_MAX) {
+  if ((slot < 1) || (slot >= TACTONS_COUNT_MAX)) {
     Serial.printf("<Result what=\"ERROR: slot %d not allowed\"/>\n", slot);
     buzzer->PlayFail();
     return;
@@ -59,18 +59,17 @@ void DataTransfer::ReceiveButtonPressed(int slot) {
 
 
 void DataTransfer::Receive(void) {
-
-  if (state == State::idle ) {
+  if (state == State::idle) {
     ReceiveIdleMode();
     return;
   }
 
-  if (state != State::receive )
+  if (state != State::receive) {
     return;
+  }
 
   //consider transfer finsihed after short void time 
-  if ( time_last_receive > 0 &&
-       millis() - time_last_receive > 50 ) {
+  if ((time_last_receive > 0) && (millis() - time_last_receive > 50)) {
     std::string string_return = ProcessReceivedData();
     SetState(State::idle, string_return.substr(0, 8), true);
 
@@ -101,14 +100,14 @@ void DataTransfer::Receive(void) {
 
 
 void DataTransfer::ReceiveIdleMode(void) {
-  
   while(Serial.available() > 0) {
-    if ( string_received.length() > 30)
+    if (string_received.length() > 30) {
       string_received.erase(0, 1);
+    }
     string_received.push_back(Serial.read());
   }
 
-  if (string_received.find("<GetTactonList/>") != -1 ) {
+  if (string_received.find("<GetTactonList/>") != -1) {
     std::stringstream ss_out;
     ss_out << "<TactonList slots=\"" << tacton_recorder_player->GetTactonListAsString().c_str() << "\"/>";
     Serial.printf("%s\n", ss_out.str().c_str());
@@ -119,8 +118,7 @@ void DataTransfer::ReceiveIdleMode(void) {
   //<GetTacton slot=”int”/>
   std::string string_slot = "<SendTacton slot=\"";
   int index_slot = string_received.find(string_slot);
-  if ( index_slot != -1 &&
-       string_received.find("/>", index_slot) != -1) {
+  if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
     int slot = string_received.at(index_slot + string_slot.size()) - 48;
     #ifdef TACT_DEBUG
     Serial.printf("DataTransfer::ReceiveIdleMode: SendTacton slot %d requested\n", slot);
@@ -132,8 +130,7 @@ void DataTransfer::ReceiveIdleMode(void) {
   //<ReceiveTacton slot=”int”/>
   string_slot = "<ReceiveTacton slot=\"";
   index_slot = string_received.find(string_slot);
-  if ( index_slot != -1 &&
-       string_received.find("/>", index_slot) != -1) {
+  if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
     int slot = string_received.at(index_slot + string_slot.size()) - 48;
     #ifdef TACT_DEBUG
     Serial.printf("DataTransfer::ReceiveTacton: ReceiveTacton slot %d requested\n", slot);
@@ -145,8 +142,9 @@ void DataTransfer::ReceiveIdleMode(void) {
 
 
 std::string DataTransfer::GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/) {
-  if ( vector_data.size() < index + length)
+  if (vector_data.size() < (index + length)) {
     return "";
+  }
 
   std::string string_return;
   for (int i = index; i < index + length; i++) {
@@ -164,22 +162,25 @@ std::string DataTransfer::ProcessReceivedData(void) {
   Serial.printf("DataTransfer::ProcessReceivedData: vector_in.size()=%d\n", vector_in.size());
   #endif //TACT_DEBUG
 
-  if (vector_in.size() == 0 )
+  if (vector_in.size() == 0) {
     return "ERROR 0 : no input data";
+  }
   //remove possilbe trailing new line
-  for (int i = 0; i <2; i++)
-    if (vector_in.at(vector_in.size()-1) == '\n' ||
-      vector_in.at(vector_in.size()-1) == '\r')
+  for (int i = 0; i <2; i++) {
+    if ((vector_in.at(vector_in.size()-1) == '\n') || (vector_in.at(vector_in.size()-1) == '\r')) {
       vector_in.pop_back();
+    }
+  }
   //check XML tags
   std::string string_prefix("<tacton>");
-  if (GetDataAsString(vector_in, 0, string_prefix.size()) != string_prefix)
+  if (GetDataAsString(vector_in, 0, string_prefix.size()) != string_prefix) {
     return "ERROR 1 : missing <tacton> prefix";
+  }
   std::string string_suffix("</tacton>");
   //Serial.printf("'%s'\n", GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()).c_str());
-  if (GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()) != string_suffix)
+  if (GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()) != string_suffix) {
     return "ERROR 2 : missing </tacton> suffix";
-
+  }
   //int length_overhead_start;
   //std::string string_data;
   //string_data = GetDataAsString(0, string_prefix.size(), '>');
@@ -204,7 +205,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
 
   unsigned char buffer[4];
   int index_vtp = 0;
-  for ( int i = string_prefix.size(); i < vector_in.size() - string_suffix.size(); i+=4) {
+  for (int i = string_prefix.size(); i < vector_in.size() - string_suffix.size(); i+=4) {
     buffer[0] = vector_in.at(i + 0);
     buffer[1] = vector_in.at(i + 1);
     buffer[2] = vector_in.at(i + 2);
@@ -214,7 +215,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
     vtp_read_instruction_words(1, buffer, &out);
     int result = tacton_recorder_player->FromVTP(receive_slot, &out, index_vtp);
     index_vtp++;
-    if (result != 0 ) {
+    if (result != 0) {
       std::ostringstream ss_out;
       ss_out << "ERROR "  << result;
       return ss_out.str();
@@ -239,7 +240,7 @@ void DataTransfer::SendButtonPressed(int slot) {
   //Serial.print("DataTransfer::SendButtonPressed\n");
   //#endif //TACT_DEBUG
 
-  if ( slot < 1 || slot >= TACTONS_COUNT_MAX) {
+  if ((slot < 1) || (slot >= TACTONS_COUNT_MAX)) {
     Serial.printf("<Result what=\"ERROR: slot %d not allowed\"/>\n", slot);
     buzzer->PlayFail();
     return;
@@ -259,8 +260,9 @@ void DataTransfer::SendButtonPressed(int slot) {
   //ss_prefix << "<tacton lengthBytes=\""  << vector_data_out.size() << "\">";
   ss_prefix << "<tacton>";
   Serial.write(ss_prefix.str().c_str());
-  for (int i = 0; i < vector_data_out.size(); i++)
+  for (int i = 0; i < vector_data_out.size(); i++) {
     Serial.write(vector_data_out.at(i));
+  }
   Serial.write("</tacton>");
   Serial.write("\n");
   //buzzer->PlayConfirm();
