@@ -3,7 +3,7 @@
 
 namespace tact {
 
-DataTransfer::DataTransfer(tact::State* current_state, tact::Display* display, tact::Buzzer* buzzer, tact::TactonRecorderPlayer* tacton_recorder_player) :
+DataTransfer::DataTransfer(tact::State* current_state, tact::Display* display, tact::Buzzer* buzzer, tact::Sampler* tacton_recorder_player) :
   current_state(current_state), display(display), buzzer(buzzer), tacton_recorder_player(tacton_recorder_player) {
 }
 

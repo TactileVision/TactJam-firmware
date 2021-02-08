@@ -6,14 +6,14 @@
 #include <state.h>
 #include <peripherals.h>
 
-#include <tactons.h>
+#include <sampler.h>
 #include <dataTransfer.h>
 
 tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
 
-tact::TactonRecorderPlayer tacton_recorder_player(&peripherals.display, &peripherals.actuator_driver, &peripherals.button_leds);
+tact::Sampler tacton_recorder_player(&peripherals.display, &peripherals.actuator_driver, &peripherals.button_leds);
 tact::DataTransfer data_transfer(&current_state, &peripherals.display, &peripherals.buzzer, &tacton_recorder_player);
 
 

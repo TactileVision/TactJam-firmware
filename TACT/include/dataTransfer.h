@@ -3,7 +3,7 @@
 
 #include <display.h>
 #include <buzzer.h>
-#include <tactons.h>
+#include <sampler.h>
 #include <state.h>
 
 
@@ -17,7 +17,7 @@ class DataTransfer {
       receive
     };
 
-    DataTransfer(tact::State* current_state, tact::Display* display, tact::Buzzer* buzzer, tact::TactonRecorderPlayer* tacton_recorder_player);
+    DataTransfer(tact::State* current_state, tact::Display* display, tact::Buzzer* buzzer, tact::Sampler* tacton_recorder_player);
 
     void SetState(State state, std::string line_2, bool force_display_update = false);
     void Reset(void);
@@ -38,7 +38,7 @@ class DataTransfer {
     tact::State* current_state;
     tact::Display* display;
     tact::Buzzer* buzzer;
-    tact::TactonRecorderPlayer* tacton_recorder_player;
+    tact::Sampler* tacton_recorder_player;
 
 
 };

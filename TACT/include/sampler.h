@@ -20,17 +20,17 @@ namespace tact {
 //#define TACTON_SAMPLES_MAX 10000
 #define TACTONS_COUNT_MAX 4
 
-class TactonRecorderPlayer {
+class Sampler {
   public:
-    enum class State {
+    enum class SamplerState {
       idle,
       recording,
       playing
     };
 
-    TactonRecorderPlayer(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds);
+    Sampler(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds);
 
-    void SetState(State state, bool force_display_update = false);
+    void SetState(SamplerState state, bool force_display_update = false);
     void Reset();
     void DeleteTacton(uint8_t slot);
     void RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer);
@@ -55,7 +55,7 @@ class TactonRecorderPlayer {
 
     unsigned long time_start_milliseconds = 0;
     uint32_t index_play_next = 0;
-    State state = State::idle; // use method SetState to change the state
+    SamplerState state = SamplerState::idle; // use method SetState to change the state
     bool loop_playback = false;
 
     //VTP based variables

@@ -1,28 +1,28 @@
-#include <tactons.h>
+#include <sampler.h>
 #include <sstream>
 
 namespace tact {
   
 
-TactonRecorderPlayer::TactonRecorderPlayer(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds) :
+Sampler::Sampler(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds) :
   tactons(TACTONS_COUNT_MAX), display(display), actuator_driver(actuator_driver), button_leds(button_leds) {
 }
 
 
-void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
+void Sampler::SetState(SamplerState state, bool force_display_update) {
   if ((state != this->state) || (force_display_update == true)) {
     std::string line_1;
     std::string line_2;
     switch(state) {
-      case State::idle: 
+      case SamplerState::idle: 
         line_1.assign("idle");
         actuator_driver->Update(0, 0);
         button_leds->Update(0);
         break;
-      case State::playing:
+      case SamplerState::playing:
         line_1.assign("play");
         break;
-      case State::recording:
+      case SamplerState::recording:
         line_1.assign("rec");
         break;
     }
@@ -38,15 +38,15 @@ void TactonRecorderPlayer::SetState(State state, bool force_display_update) {
 }
 
 
-void TactonRecorderPlayer::Reset()  {
-  SetState(State::idle, true);
+void Sampler::Reset()  {
+  SetState(SamplerState::idle, true);
   #ifdef TACT_DEBUG
   Serial.print("TactonRecorderPlayer::Reset\n");
   #endif //TACT_DEBUG
 }
 
 
-void TactonRecorderPlayer::DeleteTacton(uint8_t slot) {
+void Sampler::DeleteTacton(uint8_t slot) {
   if (slot > TACTONS_COUNT_MAX) {
     return;
   }
@@ -54,11 +54,11 @@ void TactonRecorderPlayer::DeleteTacton(uint8_t slot) {
 }
 
 
-void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer) {
+void Sampler::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer) {
   actuator_driver->Update(0, 0);
   button_leds->Update(0);
-  if (state == State::recording) {
-    SetState(State::idle);
+  if (state == SamplerState::recording) {
+    SetState(SamplerState::idle);
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
     return;
@@ -66,7 +66,7 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
   tactons.at(current_state.slot).tacton_samples.clear();
   //tactons.at(current_state.slot).tacton_samples.reserve(TACTON_SAMPLES_MAX);
   time_start_milliseconds = 0;
-  SetState(State::recording);
+  SetState(SamplerState::recording);
 
   buzzer.PlayConfirm();
 
@@ -76,18 +76,18 @@ void TactonRecorderPlayer::RecordButtonPressed(tact::State &current_state, tact:
 }
 
 
-void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
+void Sampler::PlayButtonPressed(tact::Buzzer &buzzer) {
   actuator_driver->Update(0, 0);
   button_leds->Update(0);
-  if (state == State::playing) {
-    SetState(State::idle);
+  if (state == SamplerState::playing) {
+    SetState(SamplerState::idle);
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
     return;
   }
   buzzer.PlayConfirm();
   time_start_milliseconds = millis();
-  SetState(State::playing);
+  SetState(SamplerState::playing);
   index_play_next = 0;
 
   #ifdef TACT_DEBUG
@@ -96,7 +96,7 @@ void TactonRecorderPlayer::PlayButtonPressed(tact::Buzzer &buzzer) {
 }
 
 
-void TactonRecorderPlayer::LoopButtonPressed(tact::Buzzer &buzzer) {
+void Sampler::LoopButtonPressed(tact::Buzzer &buzzer) {
   //if (state != State::playing)
   //  return;
   loop_playback = !loop_playback;
@@ -105,9 +105,9 @@ void TactonRecorderPlayer::LoopButtonPressed(tact::Buzzer &buzzer) {
 }
 
 
-void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
+void Sampler::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
 
-  if ( state != State::recording) {
+  if ( state != SamplerState::recording) {
     //actuator button is only allowed during recording
     if (current_state.pressed_actuator_buttons != 0) {
       buzzer.PlayFail();
@@ -139,9 +139,9 @@ void TactonRecorderPlayer::RecordSample(tact::State &current_state, tact::Buzzer
 }
 
 
-void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder) {
+void Sampler::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder) {
 
-  if (state != State::playing) {
+  if (state != SamplerState::playing) {
     //buzzer.PlayFail();
     return;
   }
@@ -156,7 +156,7 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
     //last sample has been played
     buzzer.PlayConfirm();
     buzzer.PlayConfirm();
-    SetState(State::idle);
+    SetState(SamplerState::idle);
     if (loop_playback == true) {
       PlayButtonPressed(buzzer);
     }
@@ -186,7 +186,7 @@ void TactonRecorderPlayer::PlaySample(tact::State &current_state, tact::Buzzer &
 }
 
 
-void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
+void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
   index_vtp_instruction = 0;
 
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
@@ -250,7 +250,7 @@ void TactonRecorderPlayer::ToVTP(uint8_t slot, std::vector<unsigned char> &vecto
 }
 
 
-void TactonRecorderPlayer::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out) {
+void Sampler::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out) {
   unsigned char buffer[4];
   vtp_write_instruction_words(1, encoded_instruction_word, buffer);
 
@@ -269,7 +269,7 @@ void TactonRecorderPlayer::AddVTPInstruction(VTPInstructionWord* encoded_instruc
 }
 
 
-int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction) {
+int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction) {
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
   if (index_of_instruction == 0) {
     time_vtp_instruction_milliseconds = 0;
@@ -328,7 +328,7 @@ int TactonRecorderPlayer::FromVTP(uint8_t slot, VTPInstructionWord* encoded_inst
 }
 
 
-std::string TactonRecorderPlayer::GetTactonListAsString(void) {
+std::string Sampler::GetTactonListAsString(void) {
   std::ostringstream ss_out;
   for (int i = 0; i < tactons.size(); i++) {
     if (tactons.at(i).tacton_samples.size() > 0) {
