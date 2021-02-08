@@ -1,14 +1,10 @@
-#ifndef _TACT_TACTONS_
-#define _TACT_TACTONS_
+#ifndef _TACT_SAMPLER_
+#define _TACT_SAMPLER_
 
 #include <Arduino.h>
 #include <vector>
+#include "peripherals.h"
 #include "tacton.h"
-#include "buzzer.h"
-#include "PCA9685.h"
-#include "SN74HC595.h"
-#include "linearEncoder.h"
-#include "display.h"
 #include "state.h"
 
 extern "C" {
@@ -28,16 +24,16 @@ class Sampler {
       playing
     };
 
-    Sampler(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds);
+    Sampler(Peripherals* peripherals);
 
     void SetState(SamplerState state, bool force_display_update = false);
     void Reset();
     void DeleteTacton(uint8_t slot);
-    void RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer);
-    void PlayButtonPressed(tact::Buzzer &buzzer);
-    void LoopButtonPressed(tact::Buzzer &buzzer);
-    void RecordSample(tact::State &current_state, tact::Buzzer &buzzer);
-    void PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder);
+    void RecordButtonPressed(State &current_state);
+    void PlayButtonPressed();
+    void LoopButtonPressed();
+    void RecordSample(State &current_state);
+    void PlaySample(State &current_state);
 
     void ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out);
     void AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out);
@@ -49,9 +45,7 @@ class Sampler {
 
   private:
     std::vector<Tacton> tactons;
-    Display* display;
-    PCA9685* actuator_driver;
-    SN74HC595* button_leds;
+    Peripherals* peripherals_;
 
     unsigned long time_start_milliseconds = 0;
     uint32_t index_play_next = 0;
@@ -67,4 +61,4 @@ class Sampler {
 } //namespace tact
 
 
-#endif //_TACT_TACTONS_
+#endif //_TACT_SAMPLER_

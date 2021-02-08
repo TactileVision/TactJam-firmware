@@ -4,8 +4,8 @@
 namespace tact {
   
 
-Sampler::Sampler(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds) :
-  tactons(TACTONS_COUNT_MAX), display(display), actuator_driver(actuator_driver), button_leds(button_leds) {
+Sampler::Sampler(Peripherals* peripherals) : tactons(TACTONS_COUNT_MAX) {
+    peripherals_ = peripherals;
 }
 
 
@@ -16,8 +16,8 @@ void Sampler::SetState(SamplerState state, bool force_display_update) {
     switch(state) {
       case SamplerState::idle: 
         line_1.assign("idle");
-        actuator_driver->Update(0, 0);
-        button_leds->Update(0);
+        peripherals_->actuator_driver.Update(0, 0);
+        peripherals_->button_leds.Update(0);
         break;
       case SamplerState::playing:
         line_1.assign("play");
@@ -32,7 +32,7 @@ void Sampler::SetState(SamplerState state, bool force_display_update) {
     else {
       line_2.assign("loop off");
     }
-    display->DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
+    peripherals_->display.DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
   }
   this->state = state;
 }
@@ -54,13 +54,13 @@ void Sampler::DeleteTacton(uint8_t slot) {
 }
 
 
-void Sampler::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzzer) {
-  actuator_driver->Update(0, 0);
-  button_leds->Update(0);
+void Sampler::RecordButtonPressed(State &current_state) {
+  peripherals_->actuator_driver.Update(0, 0);
+  peripherals_->button_leds.Update(0);
   if (state == SamplerState::recording) {
     SetState(SamplerState::idle);
-    buzzer.PlayConfirm();
-    buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
     return;
   }
   tactons.at(current_state.slot).tacton_samples.clear();
@@ -68,7 +68,7 @@ void Sampler::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzz
   time_start_milliseconds = 0;
   SetState(SamplerState::recording);
 
-  buzzer.PlayConfirm();
+  peripherals_->buzzer.PlayConfirm();
 
   #ifdef TACT_DEBUG
   Serial.printf("TactonRecorderPlayer::RecordButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
@@ -76,16 +76,16 @@ void Sampler::RecordButtonPressed(tact::State &current_state, tact::Buzzer &buzz
 }
 
 
-void Sampler::PlayButtonPressed(tact::Buzzer &buzzer) {
-  actuator_driver->Update(0, 0);
-  button_leds->Update(0);
+void Sampler::PlayButtonPressed() {
+  peripherals_->actuator_driver.Update(0, 0);
+  peripherals_->button_leds.Update(0);
   if (state == SamplerState::playing) {
     SetState(SamplerState::idle);
-    buzzer.PlayConfirm();
-    buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
     return;
   }
-  buzzer.PlayConfirm();
+  peripherals_->buzzer.PlayConfirm();
   time_start_milliseconds = millis();
   SetState(SamplerState::playing);
   index_play_next = 0;
@@ -96,21 +96,21 @@ void Sampler::PlayButtonPressed(tact::Buzzer &buzzer) {
 }
 
 
-void Sampler::LoopButtonPressed(tact::Buzzer &buzzer) {
+void Sampler::LoopButtonPressed() {
   //if (state != State::playing)
   //  return;
   loop_playback = !loop_playback;
-  buzzer.PlayConfirm();
+  peripherals_->buzzer.PlayConfirm();
   SetState(state, true);
 }
 
 
-void Sampler::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
+void Sampler::RecordSample(State &current_state) {
 
   if ( state != SamplerState::recording) {
     //actuator button is only allowed during recording
     if (current_state.pressed_actuator_buttons != 0) {
-      buzzer.PlayFail();
+      peripherals_->buzzer.PlayFail();
     }
     return;
   }
@@ -130,8 +130,8 @@ void Sampler::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
 
   tactons.at(current_state.slot).tacton_samples.push_back(tactonSample);
 
-  button_leds->Update(current_state.pressed_actuator_buttons);
-  actuator_driver->Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+  peripherals_->button_leds.Update(current_state.pressed_actuator_buttons);
+  peripherals_->actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
 
   #ifdef TACT_DEBUG
   tactonSample.SerialPrint();
@@ -139,10 +139,10 @@ void Sampler::RecordSample(tact::State &current_state, tact::Buzzer &buzzer) {
 }
 
 
-void Sampler::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact::LinearEncoder &amplitude_encoder) {
+void Sampler::PlaySample(State &current_state) {
 
   if (state != SamplerState::playing) {
-    //buzzer.PlayFail();
+    //peripherals_->buzzer.PlayFail();
     return;
   }
 
@@ -154,11 +154,11 @@ void Sampler::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact:
 
   if (index_play_next >= tacton_samples->size()) {
     //last sample has been played
-    buzzer.PlayConfirm();
-    buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
     SetState(SamplerState::idle);
     if (loop_playback == true) {
-      PlayButtonPressed(buzzer);
+      PlayButtonPressed();
     }
     return;
   }
@@ -176,8 +176,8 @@ void Sampler::PlaySample(tact::State &current_state, tact::Buzzer &buzzer, tact:
   }
 
   if (tacton_latest != NULL) {
-    actuator_driver->Update(tacton_latest->buttons_state, amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
-    button_leds->Update(tacton_latest->buttons_state);
+    peripherals_->actuator_driver.Update(tacton_latest->buttons_state, peripherals_->amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
+    peripherals_->button_leds.Update(tacton_latest->buttons_state);
     #ifdef TACT_DEBUG
     Serial.printf("sample %d/%d: ", index_play_next, tacton_samples->size());
     tacton_latest->SerialPrint();
@@ -198,7 +198,7 @@ void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
     TactonSample *tacton_sample = &tacton_samples->at(i);
 
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
+    if (config::kDebugLevel >= config::DebugLevel::verbose) {
       Serial.printf("ToVTP sample %d/%d: ", i + 1, tacton_samples->size());
       tacton_sample->SerialPrint();
     }
@@ -210,7 +210,7 @@ void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
       instruction.params.format_a.parameter_a = time_diff;
 
       #ifdef TACT_DEBUG
-      if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose)
+      if (config::kDebugLevel >= config::DebugLevel::verbose)
         Serial.printf("  VTP_INST_INCREMENT_TIME parameter_a=%ld\n", instruction.params.format_a.parameter_a);
       #endif //TACT_DEBUG
 
@@ -231,7 +231,7 @@ void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
         instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? (tacton_sample->amplitude_percent * 10) : 0;
       
         #ifdef TACT_DEBUG
-        if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose)
+        if (config::kDebugLevel >= config::DebugLevel::verbose)
           Serial.printf("  VTP_INST_SET_AMPLITUDE time_offset=%d  channel_select=%d  parameter_a=%d\n", instruction.params.format_b.time_offset, instruction.params.format_b.channel_select, instruction.params.format_b.parameter_a);
         #endif //TACT_DEBUG
 
@@ -318,7 +318,7 @@ int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word,
   }
   
   #ifdef TACT_DEBUG
-  if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
+  if (config::kDebugLevel >= config::DebugLevel::verbose) {
     Serial.printf(" FromVTP sample %d: ", tacton_samples->size());
     tacton_samples->at(tacton_samples->size()-1).SerialPrint();
   }

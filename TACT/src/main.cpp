@@ -13,7 +13,7 @@ tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
 
-tact::Sampler tacton_recorder_player(&peripherals.display, &peripherals.actuator_driver, &peripherals.button_leds);
+tact::Sampler tacton_recorder_player(&peripherals);
 tact::DataTransfer data_transfer(&current_state, &peripherals.display, &peripherals.buzzer, &tacton_recorder_player);
 
 
@@ -174,25 +174,25 @@ void HandleRecPlayMode() {
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
-      tacton_recorder_player.RecordButtonPressed(current_state, peripherals.buzzer);
+      tacton_recorder_player.RecordButtonPressed(current_state);
     }
     if ((previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed, play
-      tacton_recorder_player.PlayButtonPressed(peripherals.buzzer);
+      tacton_recorder_player.PlayButtonPressed();
     }
     if ((previous_state.pressed_menu_buttons & 1) == 1) {
       //menu button 3 pressed, switch loop
-      tacton_recorder_player.LoopButtonPressed(peripherals.buzzer);
+      tacton_recorder_player.LoopButtonPressed();
     }
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    tacton_recorder_player.RecordSample(current_state, peripherals.buzzer);
+    tacton_recorder_player.RecordSample(current_state);
   }
   if ((previous_state.amplitude != current_state.amplitude) && (current_state.pressed_actuator_buttons != 0)) {
-    tacton_recorder_player.RecordSample(current_state, peripherals.buzzer);
+    tacton_recorder_player.RecordSample(current_state);
   }
-  tacton_recorder_player.PlaySample(current_state, peripherals.buzzer, peripherals.amplitude_encoder);
+  tacton_recorder_player.PlaySample(current_state);
 
 
   //#ifdef TACT_DEBUG
