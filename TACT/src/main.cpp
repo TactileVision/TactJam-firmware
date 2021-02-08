@@ -151,6 +151,12 @@ void HandleJamMode() {
     peripherals.actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
   }
 
+  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+    if (previous_state.pressed_menu_buttons != 0) {
+      peripherals.buzzer.PlayFail();
+    }
+  }
+
   // TODO: check if delay is needed
   delay(2);
 }
