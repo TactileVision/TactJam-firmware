@@ -2,13 +2,6 @@
 #include <sstream>
 
 namespace tact {
-
-
-void TactonSample::SerialPrint() {
-  Serial.printf("TactonSample: time_milliseconds=%d  buttons_state=", time_milliseconds);
-  Serial.print(buttons_state, BIN);
-  Serial.printf("  amplitude=%d\n", amplitude_percent);
-}
   
 
 TactonRecorderPlayer::TactonRecorderPlayer(tact::Display* display, PCA9685* actuator_driver, SN74HC595* button_leds) :

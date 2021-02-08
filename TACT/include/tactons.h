@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <vector>
+#include "tacton.h"
 #include "buzzer.h"
 #include "PCA9685.h"
 #include "SN74HC595.h"
@@ -18,20 +19,6 @@ namespace tact {
 
 //#define TACTON_SAMPLES_MAX 10000
 #define TACTONS_COUNT_MAX 4
-
-class TactonSample {
-  public:
-    uint32_t time_milliseconds = 0;
-    uint8_t buttons_state = 0;
-    uint8_t amplitude_percent = 0;
-
-    void SerialPrint(void);
-};
-
-class Tacton {
-  public:
-    std::vector<TactonSample> tacton_samples;
-};
 
 class TactonRecorderPlayer {
   public:
