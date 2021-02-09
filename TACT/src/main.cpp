@@ -144,7 +144,6 @@ void HandleJamMode() {
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
     peripherals.button_leds.Update(current_state.pressed_actuator_buttons);
     peripherals.actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
-    current_state.pressed_actuator_buttons = current_state.pressed_actuator_buttons;
   }
 
   if (previous_state.amplitude_percent != current_state.amplitude_percent) {
