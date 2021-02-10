@@ -5,17 +5,14 @@
 #include <mode.h>
 #include <state.h>
 #include <peripherals.h>
-
 #include <sampler.h>
 #include <dataTransfer.h>
 
 tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
-
-tact::Sampler tacton_recorder_player(&peripherals);
-tact::DataTransfer data_transfer(&current_state, &peripherals.display, &peripherals.buzzer, &tacton_recorder_player);
-
+tact::Sampler sampler(&peripherals);
+tact::DataTransfer data_transfer(&current_state, &peripherals.display, &peripherals.buzzer, &sampler);
 
 void ReadButtons();
 void HandleJamMode();
@@ -96,8 +93,8 @@ void loop() {
       peripherals.display.DrawContentTeaserDoubleLine(fill, fill);
     }
     else {
-    peripherals.display.ClearContentTeaser();
-  }
+      peripherals.display.ClearContentTeaser();
+    }
   }
 
   switch (current_state.mode) {
@@ -173,31 +170,31 @@ void HandleRecPlayMode() {
   ReadButtons();
 
   if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
-    tacton_recorder_player.Reset();
+    sampler.Reset();
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
-      tacton_recorder_player.RecordButtonPressed(current_state);
+      sampler.RecordButtonPressed(current_state);
     }
     if ((previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed, play
-      tacton_recorder_player.PlayButtonPressed();
+      sampler.PlayButtonPressed();
     }
     if ((previous_state.pressed_menu_buttons & 1) == 1) {
       //menu button 3 pressed, switch loop
-      tacton_recorder_player.LoopButtonPressed();
+      sampler.LoopButtonPressed();
     }
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    tacton_recorder_player.RecordSample(current_state);
+    sampler.RecordSample(current_state);
   }
   if ((previous_state.amplitude != current_state.amplitude) && (current_state.pressed_actuator_buttons != 0)) {
-    tacton_recorder_player.RecordSample(current_state);
+    sampler.RecordSample(current_state);
   }
-  tacton_recorder_player.PlaySample(current_state);
+  sampler.PlaySample(current_state);
 
 
   //#ifdef TACT_DEBUG
