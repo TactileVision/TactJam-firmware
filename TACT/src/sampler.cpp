@@ -184,7 +184,7 @@ void Sampler::PlaySample(State &current_state) {
 }
 
 
-void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
+void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
   index_vtp_instruction = 0;
 
   std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
@@ -248,7 +248,7 @@ void Sampler::ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out) {
 }
 
 
-void Sampler::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out) {
+void Sampler::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<uint8_t> &vector_out) {
   unsigned char buffer[4];
   vtp_write_instruction_words(1, encoded_instruction_word, buffer);
 

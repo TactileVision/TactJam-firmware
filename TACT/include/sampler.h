@@ -35,8 +35,8 @@ class Sampler {
     void RecordSample(State &current_state);
     void PlaySample(State &current_state);
 
-    void ToVTP(uint8_t slot, std::vector<unsigned char> &vector_out);
-    void AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<unsigned char> &vector_out);
+    void ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out);
+    void AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<uint8_t> &vector_out);
     /**
      *  @param index_of_instruction used for initialisation if index is 0 and may be used for debugging
      */
