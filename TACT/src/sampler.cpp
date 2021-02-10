@@ -59,8 +59,7 @@ void Sampler::RecordButtonPressed(State &current_state) {
   peripherals_->button_leds.Update(0);
   if (state == SamplerState::recording) {
     SetState(SamplerState::idle);
-    peripherals_->buzzer.PlayConfirm();
-    peripherals_->buzzer.PlayConfirm();
+    peripherals_->buzzer.PlaySuccess();
     return;
   }
   tactons.at(current_state.slot).tacton_samples.clear();
@@ -81,8 +80,7 @@ void Sampler::PlayButtonPressed() {
   peripherals_->button_leds.Update(0);
   if (state == SamplerState::playing) {
     SetState(SamplerState::idle);
-    peripherals_->buzzer.PlayConfirm();
-    peripherals_->buzzer.PlayConfirm();
+    peripherals_->buzzer.PlaySuccess();
     return;
   }
   peripherals_->buzzer.PlayConfirm();
