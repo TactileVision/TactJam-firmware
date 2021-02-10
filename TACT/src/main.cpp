@@ -91,7 +91,13 @@ void loop() {
   if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
     peripherals.actuator_driver.Update(0, 0);
     peripherals.button_leds.Update(0);
+    if (current_state.mode == tact::Modes::jam) {
+      const auto fill = String("/\\/\\/\\/\\/\\");
+      peripherals.display.DrawContentTeaserDoubleLine(fill, fill);
+    }
+    else {
     peripherals.display.ClearContentTeaser();
+  }
   }
 
   switch (current_state.mode) {
