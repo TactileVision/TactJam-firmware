@@ -24,7 +24,7 @@ const uint8_t kERMOverdriveDuration = 20;
 #if TACT_BOARD_REV==0
 #define __TACT_BUZZER_MULTIPLEXER__
 const uint8_t kBuzzerID = 8;
-#endif //TACT_BOARD_RE
+#endif //TACT_BOARD_REV
 
 #if TACT_BOARD_REV==0
 const uint8_t kActuatorMapping[] = {0,1,2,3,4,5,6,7};
