@@ -3,51 +3,48 @@
 
 namespace tact {
 
-DataTransfer::DataTransfer(tact::State* current_state, tact::Display* display, tact::Buzzer* buzzer, tact::Sampler* tacton_recorder_player) :
-  current_state(current_state), display(display), buzzer(buzzer), tacton_recorder_player(tacton_recorder_player) {
+DataTransfer::DataTransfer(Peripherals* peripherals, Sampler* sampler) {
+    peripherals_ = peripherals;
+    sampler_ = sampler;
 }
 
 
-void DataTransfer::SetState(State state, std::string line_2, bool force_display_update) {
+void DataTransfer::SetState(DataState state, std::string line_2, bool force_display_update) {
   if ((state != this->state) || (force_display_update == true)) {
     std::string line_1;
     switch(state) {
-      case State::idle: 
+      case DataState::idle: 
         line_1.assign("idle");
         break;
-      case State::send:
+      case DataState::send:
         line_1.assign("send");
         break;
-      case State::receive:
+      case DataState::receive:
         line_1.assign("receive");
         break;
     }
-    //if ( loop_playback == true )
-    //  line_2.assign("loop on");
-    //else
-    //  line_2.assign("loop off");
-    display->DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
+    peripherals_->display.DrawContentTeaserDoubleLine(line_1.c_str(), line_2.c_str());
   }
   this->state = state;
 }
 
 
 void DataTransfer::Reset() {
-  SetState(State::idle, "", true);
+  SetState(DataState::idle, "", true);
   #ifdef TACT_DEBUG
   Serial.print("DataTransfer::Reset\n");
   #endif //TACT_DEBUG
 }
 
 
-void DataTransfer::ReceiveButtonPressed(int slot) {
+void DataTransfer::ReceiveButtonPressed(uint8_t slot) {
   if ((slot < 1) || (slot >= TACTONS_COUNT_MAX)) {
     Serial.printf("<Result what=\"ERROR: slot %d not allowed\"/>\n", slot);
-    buzzer->PlayFail();
+    peripherals_->buzzer.PlayFail();
     return;
   }
-  SetState(State::receive, "");
-  buzzer->PlayConfirm();
+  SetState(DataState::receive, "");
+  peripherals_->buzzer.PlayConfirm();
   vector_in.clear();
   time_last_receive = 0;
   receive_slot = slot;
@@ -59,30 +56,30 @@ void DataTransfer::ReceiveButtonPressed(int slot) {
 
 
 void DataTransfer::Receive(void) {
-  if (state == State::idle) {
+  if (state == DataState::idle) {
     ReceiveIdleMode();
     return;
   }
 
-  if (state != State::receive) {
+  if (state != DataState::receive) {
     return;
   }
 
   //consider transfer finsihed after short void time 
   if ((time_last_receive > 0) && (millis() - time_last_receive > 50)) {
     std::string string_return = ProcessReceivedData();
-    SetState(State::idle, string_return.substr(0, 8), true);
+    SetState(DataState::idle, string_return.substr(0, 8), true);
 
     Serial.printf("<Result what=\"%s\"/>\n", string_return.c_str());
 
     if (string_return.rfind("ERROR", 0) == 0) {
-      buzzer->PlayFail();
+      peripherals_->buzzer.PlayFail();
       //#ifdef TACT_DEBUG
       //Serial.printf("%s\n", string_return.c_str());
       //#endif //TACT_DEBUG
     }
     else {
-      buzzer->PlayConfirm();
+      peripherals_->buzzer.PlayConfirm();
       //#ifdef TACT_DEBUG
       //Serial.printf("done: %s\n", string_return.c_str());
       //#endif //TACT_DEBUG
@@ -109,9 +106,9 @@ void DataTransfer::ReceiveIdleMode(void) {
 
   if (string_received.find("<GetTactonList/>") != -1) {
     std::stringstream ss_out;
-    ss_out << "<TactonList slots=\"" << tacton_recorder_player->GetTactonListAsString().c_str() << "\"/>";
+    ss_out << "<TactonList slots=\"" << sampler_->GetTactonListAsString().c_str() << "\"/>";
     Serial.printf("%s\n", ss_out.str().c_str());
-    buzzer->PlayConfirm();
+    peripherals_->buzzer.PlayConfirm();
     string_received.clear();
   }
 
@@ -213,7 +210,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
 
     VTPInstructionWord out;
     vtp_read_instruction_words(1, buffer, &out);
-    int result = tacton_recorder_player->FromVTP(receive_slot, &out, index_vtp);
+    int result = sampler_->FromVTP(receive_slot, &out, index_vtp);
     index_vtp++;
     if (result != 0) {
       std::ostringstream ss_out;
@@ -228,7 +225,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
 }
 
 
-void DataTransfer::SendButtonPressed(int slot) {
+void DataTransfer::SendButtonPressed(uint8_t slot) {
   //Linux:
   // device: e.g. /dev/ttyUSB0
   // set serial device to default settings (needed after firmware upload, so no reconnect needed): stty -F <device> sane -echo 115200
@@ -236,21 +233,26 @@ void DataTransfer::SendButtonPressed(int slot) {
   // write incoming data to file as is: (stty raw; cat > tacton.out) < device
   // send file to device: cat file > device
 
-  //#ifdef TACT_DEBUG
-  //Serial.print("DataTransfer::SendButtonPressed\n");
-  //#endif //TACT_DEBUG
+  SetState(DataState::send, "");
+  peripherals_->buzzer.PlayConfirm();
 
-  if ((slot < 1) || (slot >= TACTONS_COUNT_MAX)) {
-    Serial.printf("<Result what=\"ERROR: slot %d not allowed\"/>\n", slot);
-    buzzer->PlayFail();
+  std::vector<uint8_t> vector_data_out;
+  sampler_->ToVTP(slot, vector_data_out);
+  uint32_t data_size = vector_data_out.size();
+
+  // data should have at least one instruction (4 bytes)
+  if (data_size < 4) {
+    peripherals_->buzzer.PlayFail();
+    SetState(DataState::idle, "");
     return;
   }
 
-  SetState(State::send, "");
-  buzzer->PlayConfirm();
-
-  std::vector<unsigned char> vector_data_out;
-  tacton_recorder_player->ToVTP(slot, vector_data_out);
+  // data should have multiple 4 bytes
+  if ((data_size%4) != 0) {
+    peripherals_->buzzer.PlayFail();
+    SetState(DataState::idle, "");
+    return;
+  }
 
   #ifdef TACT_DEBUG
   Serial.printf("DataTransfer::SendButtonPressed: sending slot=%d  vector_data_out.size()=%d  size/4=%d\n", slot, vector_data_out.size(), vector_data_out.size() / 4);
@@ -263,10 +265,9 @@ void DataTransfer::SendButtonPressed(int slot) {
   for (int i = 0; i < vector_data_out.size(); i++) {
     Serial.write(vector_data_out.at(i));
   }
-  Serial.write("</tacton>");
-  Serial.write("\n");
-  //buzzer->PlayConfirm();
-  SetState(State::idle, "");
+
+  peripherals_->buzzer.PlayConfirm();
+  SetState(DataState::idle, "");
 }
 
 

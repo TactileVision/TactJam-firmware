@@ -12,7 +12,7 @@ tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
 tact::Sampler sampler(&peripherals);
-tact::DataTransfer data_transfer(&current_state, &peripherals.display, &peripherals.buzzer, &sampler);
+tact::DataTransfer data_transfer(&peripherals, &sampler);
 
 void ReadButtons();
 void HandleJamMode();
