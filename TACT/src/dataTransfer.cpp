@@ -3,6 +3,11 @@
 
 namespace tact {
 
+#define COM_SEND (uint8_t)1
+#define COM_RECEIVE (uint8_t)2
+#define COM_CONNECT (uint8_t)3
+#define COM_DEBUG (uint8_t)4
+
 DataTransfer::DataTransfer(Peripherals* peripherals, Sampler* sampler) {
     peripherals_ = peripherals;
     sampler_ = sampler;
@@ -47,7 +52,7 @@ void DataTransfer::ReceiveButtonPressed(uint8_t slot) {
   peripherals_->buzzer.PlayConfirm();
   vector_in.clear();
   time_last_receive = 0;
-  receive_slot = slot;
+  //receive_slot = slot;
 
   #ifdef TACT_DEBUG
   Serial.print("DataTransfer::ReceiveButtonPressed\n");
@@ -69,8 +74,11 @@ void DataTransfer::Receive(void) {
   if ((time_last_receive > 0) && (millis() - time_last_receive > 50)) {
     std::string string_return = ProcessReceivedData();
     SetState(DataState::idle, string_return.substr(0, 8), true);
-
+    
+    #ifdef TACT_DEBUG
     Serial.printf("<Result what=\"%s\"/>\n", string_return.c_str());
+    #endif //TACT_DEBUG
+
 
     if (string_return.rfind("ERROR", 0) == 0) {
       peripherals_->buzzer.PlayFail();
@@ -102,6 +110,13 @@ void DataTransfer::ReceiveIdleMode(void) {
       string_received.erase(0, 1);
     }
     string_received.push_back(Serial.read());
+  }
+
+
+  if (string_received.find("granted") != -1) {
+    peripherals_->buzzer.PlayConfirm();
+    connection_confirmed = true;
+    string_received.clear();
   }
 
   if (string_received.find("<GetTactonList/>") != -1) {
@@ -159,25 +174,65 @@ std::string DataTransfer::ProcessReceivedData(void) {
   Serial.printf("DataTransfer::ProcessReceivedData: vector_in.size()=%d\n", vector_in.size());
   #endif //TACT_DEBUG
 
-  if (vector_in.size() == 0) {
-    return "ERROR 0 : no input data";
-  }
-  //remove possilbe trailing new line
-  for (int i = 0; i <2; i++) {
-    if ((vector_in.at(vector_in.size()-1) == '\n') || (vector_in.at(vector_in.size()-1) == '\r')) {
-      vector_in.pop_back();
+  if (vector_in.size() == 0)
+    return "ERROR 0 : vector_in.size() == 0";
+
+  if (vector_in.size() < 6)
+    return "ERROR 1 : vector_in.size() < 6";
+
+  if (vector_in.at(0) != COM_RECEIVE)
+    return "ERROR 2 : vector_in.at(0) != COM_RECEIVE";
+
+  uint8_t slot = vector_in.at(1);
+
+  if ((slot == 0) || (slot >= TACTONS_COUNT_MAX))
+    return "ERROR 3 : (slot == 0) || (slot >= TACTONS_COUNT_MAX)";
+
+  uint32_t size = *(&vector_in[2]);
+
+  if (size % 4 != 0)
+    return "ERROR 4 : size % 4 != 0";
+
+  if (vector_in.size() != 6 + size)
+    return "ERROR 5 : vector_in.size() != 6 + size";
+
+  unsigned char buffer[4];
+  int index_vtp = 0;
+  for (int i = 6; i < vector_in.size(); i+=4) {
+    buffer[0] = vector_in.at(i + 0);
+    buffer[1] = vector_in.at(i + 1);
+    buffer[2] = vector_in.at(i + 2);
+    buffer[3] = vector_in.at(i + 3);
+
+    VTPInstructionWord out;
+    vtp_read_instruction_words(1, buffer, &out);
+    int result = sampler_->FromVTP(slot, &out, index_vtp);
+    index_vtp++;
+    if (result != 0) {
+      std::ostringstream ss_out;
+      ss_out << "ERROR "  << result;
+      return ss_out.str();
     }
   }
+
+
+
+  //remove possilbe trailing new line
+  //for (int i = 0; i <2; i++) {
+  //  if ((vector_in.at(vector_in.size()-1) == '\n') || (vector_in.at(vector_in.size()-1) == '\r')) {
+  //    vector_in.pop_back();
+  //  }
+  //}
   //check XML tags
-  std::string string_prefix("<tacton>");
-  if (GetDataAsString(vector_in, 0, string_prefix.size()) != string_prefix) {
-    return "ERROR 1 : missing <tacton> prefix";
-  }
-  std::string string_suffix("</tacton>");
+  //std::string string_prefix("<tacton>");
+  //if (GetDataAsString(vector_in, 0, string_prefix.size()) != string_prefix) {
+  //  return "ERROR 1 : missing <tacton> prefix";
+  //}
+  //std::string string_suffix("</tacton>");
   //Serial.printf("'%s'\n", GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()).c_str());
-  if (GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()) != string_suffix) {
-    return "ERROR 2 : missing </tacton> suffix";
-  }
+  //if (GetDataAsString(vector_in, vector_in.size() - string_suffix.size(), string_suffix.size()) != string_suffix) {
+  //  return "ERROR 2 : missing </tacton> suffix";
+  //}
   //int length_overhead_start;
   //std::string string_data;
   //string_data = GetDataAsString(0, string_prefix.size(), '>');
@@ -200,24 +255,24 @@ std::string DataTransfer::ProcessReceivedData(void) {
   //if (length_data_calculated % 4 != 0 )
   //      return "ERROR 5";
 
-  unsigned char buffer[4];
-  int index_vtp = 0;
-  for (int i = string_prefix.size(); i < vector_in.size() - string_suffix.size(); i+=4) {
-    buffer[0] = vector_in.at(i + 0);
-    buffer[1] = vector_in.at(i + 1);
-    buffer[2] = vector_in.at(i + 2);
-    buffer[3] = vector_in.at(i + 3);
+  //unsigned char buffer[4];
+  //int index_vtp = 0;
+  //for (int i = string_prefix.size(); i < vector_in.size() - string_suffix.size(); i+=4) {
+  //  buffer[0] = vector_in.at(i + 0);
+  //  buffer[1] = vector_in.at(i + 1);
+  //  buffer[2] = vector_in.at(i + 2);
+  //  buffer[3] = vector_in.at(i + 3);
 
-    VTPInstructionWord out;
-    vtp_read_instruction_words(1, buffer, &out);
-    int result = sampler_->FromVTP(receive_slot, &out, index_vtp);
-    index_vtp++;
-    if (result != 0) {
-      std::ostringstream ss_out;
-      ss_out << "ERROR "  << result;
-      return ss_out.str();
-    }
-  }
+  //  VTPInstructionWord out;
+  //  vtp_read_instruction_words(1, buffer, &out);
+  //  int result = sampler_->FromVTP(receive_slot, &out, index_vtp);
+  //  index_vtp++;
+  //  if (result != 0) {
+  //    std::ostringstream ss_out;
+  //    ss_out << "ERROR "  << result;
+  //    return ss_out.str();
+  //  }
+  //}
 
   //std::ostringstream ss_out;
   //ss_out << (index_vtp * 4) << " B";
@@ -260,14 +315,36 @@ void DataTransfer::SendButtonPressed(uint8_t slot) {
 
   std::ostringstream ss_prefix;
   //ss_prefix << "<tacton lengthBytes=\""  << vector_data_out.size() << "\">";
-  ss_prefix << "<tacton>";
-  Serial.write(ss_prefix.str().c_str());
+  //ss_prefix << "<tacton>";
+  //Serial.write(ss_prefix.str().c_str());
+  Serial.write(COM_SEND);
+  Serial.write(slot);
+  uint32_t size = vector_data_out.size();
+  Serial.write((byte *)&size, 4);
   for (int i = 0; i < vector_data_out.size(); i++) {
     Serial.write(vector_data_out.at(i));
   }
 
   peripherals_->buzzer.PlayConfirm();
   SetState(DataState::idle, "");
+}
+
+
+void DataTransfer::Send(void) {
+  
+  if (state != DataState::idle)
+    return;
+
+  if (connection_confirmed == false &&
+      (millis() - time_last_connection_sent >= 1000)) {
+    time_last_connection_sent = millis();
+    Serial.write(COM_CONNECT);
+    Serial.write(0);
+    std::string out("asking");
+    uint32_t size = out.size();
+    Serial.write((byte *)&size, 4);
+    Serial.printf("%s", out.c_str());
+  }
 }
 
 

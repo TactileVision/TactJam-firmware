@@ -25,13 +25,16 @@ class DataTransfer {
     std::string GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/);
     std::string ProcessReceivedData(void);
     void SendButtonPressed(uint8_t slot);
+    void Send(void);
 
   private:
     DataState state = DataState::idle; // use method SetState to change the state
     std::vector<uint8_t> vector_in;
     unsigned long time_last_receive;
     std::string string_received;
-    uint8_t receive_slot = 0;
+    //uint8_t receive_slot = 0;
+    bool connection_confirmed = false;
+    unsigned long time_last_connection_sent = 0;
 
     Sampler* sampler_;
     Peripherals* peripherals_;

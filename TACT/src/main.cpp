@@ -225,6 +225,7 @@ void HandleDataTransferMode() {
   }
 
   data_transfer.Receive();
+  data_transfer.Send();
 
   delay(2);
 }
