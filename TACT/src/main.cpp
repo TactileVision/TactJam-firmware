@@ -11,7 +11,7 @@
 tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
-tact::Sampler sampler(&peripherals);
+tact::Sampler sampler(&peripherals, &current_state);
 tact::DataTransfer data_transfer(&peripherals, &sampler);
 
 void ReadButtons();
@@ -97,6 +97,10 @@ void loop() {
     }
   }
 
+  // needed to be located here to listen for message asking and anwering by message granting
+  data_transfer.Receive(current_state);
+  data_transfer.Send();
+
   switch (current_state.mode) {
     case tact::Modes::undefined :
       #ifdef TACT_DEBUG
@@ -176,7 +180,7 @@ void HandleRecPlayMode() {
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
     if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
-      sampler.RecordButtonPressed(current_state);
+      sampler.RecordButtonPressed();
     }
     if ((previous_state.pressed_menu_buttons & 2) == 2) {
       //menu button 2 pressed, play
@@ -189,12 +193,12 @@ void HandleRecPlayMode() {
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    sampler.RecordSample(current_state);
+    sampler.RecordSample();
   }
   if ((previous_state.amplitude != current_state.amplitude) && (current_state.pressed_actuator_buttons != 0)) {
-    sampler.RecordSample(current_state);
+    sampler.RecordSample();
   }
-  sampler.PlaySample(current_state);
+  sampler.PlaySample();
 
 
   //#ifdef TACT_DEBUG
@@ -224,8 +228,9 @@ void HandleDataTransferMode() {
     }
   }
 
-  data_transfer.Receive();
-  data_transfer.Send();
+  //moved to void loop()
+  //data_transfer.Receive();
+  //data_transfer.Send();
 
   delay(2);
 }

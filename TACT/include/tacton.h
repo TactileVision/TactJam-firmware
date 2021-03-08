@@ -20,7 +20,7 @@ struct TactonSample {
 
 
 struct Tacton {
-  uint8_t slot;
+  //uint8_t slot;
   std::vector<TactonSample> tacton_samples;
 };
 

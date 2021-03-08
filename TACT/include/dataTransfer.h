@@ -20,12 +20,12 @@ class DataTransfer {
     void SetState(DataState state, std::string line_2, bool force_display_update = false);
     void Reset(void);
     void ReceiveButtonPressed(uint8_t slot);
-    void Receive(void);
+    void Receive(State &current_state);
     void ReceiveIdleMode(void);
     std::string GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/);
     std::string ProcessReceivedData(void);
     void SendButtonPressed(uint8_t slot);
-    void Send(void);
+    void Send();
 
   private:
     DataState state = DataState::idle; // use method SetState to change the state

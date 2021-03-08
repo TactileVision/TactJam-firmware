@@ -4,8 +4,9 @@
 namespace tact {
   
 
-Sampler::Sampler(Peripherals* peripherals) : tactons(TACTONS_COUNT_MAX) {
-    peripherals_ = peripherals;
+Sampler::Sampler(Peripherals* peripherals, tact::State *current_state) : tactons(TACTONS_COUNT_MAX) {
+    peripherals_ = peripherals,
+    this->current_state = current_state;
 }
 
 
@@ -46,15 +47,15 @@ void Sampler::Reset()  {
 }
 
 
-void Sampler::DeleteTacton(uint8_t slot) {
-  if (slot > TACTONS_COUNT_MAX) {
-    return;
-  }
-  tactons.at(slot).tacton_samples.clear();
-}
+//void Sampler::DeleteTacton(uint8_t slot) {
+//  if (slot > TACTONS_COUNT_MAX) {
+//    return;
+//  }
+//  tactons.at(slot).tacton_samples.clear();
+//}
 
 
-void Sampler::RecordButtonPressed(State &current_state) {
+void Sampler::RecordButtonPressed() {
   peripherals_->actuator_driver.Update(0, 0);
   peripherals_->button_leds.Update(0);
   if (state == SamplerState::recording) {
@@ -62,7 +63,7 @@ void Sampler::RecordButtonPressed(State &current_state) {
     peripherals_->buzzer.PlaySuccess();
     return;
   }
-  tactons.at(current_state.slot).tacton_samples.clear();
+  tactons.at(current_state->slot).tacton_samples.clear();
   //tactons.at(current_state.slot).tacton_samples.reserve(TACTON_SAMPLES_MAX);
   time_start_milliseconds = 0;
   SetState(SamplerState::recording);
@@ -103,17 +104,17 @@ void Sampler::LoopButtonPressed() {
 }
 
 
-void Sampler::RecordSample(State &current_state) {
+void Sampler::RecordSample() {
 
   if ( state != SamplerState::recording) {
     //actuator button is only allowed during recording
-    if (current_state.pressed_actuator_buttons != 0) {
+    if (current_state->pressed_actuator_buttons != 0) {
       peripherals_->buzzer.PlayFail();
     }
     return;
   }
 
-  if (current_state.slot >= TACTONS_COUNT_MAX) {
+  if (current_state->slot >= TACTONS_COUNT_MAX) {
     return;
   }
   //this avoids a time gap between start record and first actuator button press
@@ -123,13 +124,13 @@ void Sampler::RecordSample(State &current_state) {
 
   TactonSample tactonSample;
   tactonSample.time_milliseconds = millis() - time_start_milliseconds;
-  tactonSample.buttons_state = current_state.pressed_actuator_buttons;
-  tactonSample.amplitude_percent = current_state.amplitude_percent;
+  tactonSample.buttons_state = current_state->pressed_actuator_buttons;
+  tactonSample.amplitude_percent = current_state->amplitude_percent;
 
-  tactons.at(current_state.slot).tacton_samples.push_back(tactonSample);
+  tactons.at(current_state->slot).tacton_samples.push_back(tactonSample);
 
-  peripherals_->button_leds.Update(current_state.pressed_actuator_buttons);
-  peripherals_->actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+  peripherals_->button_leds.Update(current_state->pressed_actuator_buttons);
+  peripherals_->actuator_driver.Update(current_state->pressed_actuator_buttons, current_state->amplitude);
 
   #ifdef TACT_DEBUG
   tactonSample.SerialPrint();
@@ -137,18 +138,18 @@ void Sampler::RecordSample(State &current_state) {
 }
 
 
-void Sampler::PlaySample(State &current_state) {
+void Sampler::PlaySample() {
 
   if (state != SamplerState::playing) {
     //peripherals_->buzzer.PlayFail();
     return;
   }
 
-  if (current_state.slot >= TACTONS_COUNT_MAX) {
+  if (current_state->slot >= TACTONS_COUNT_MAX) {
     return;
   }
 
-  std::vector<TactonSample> *tacton_samples  = &tactons.at(current_state.slot).tacton_samples;
+  std::vector<TactonSample> *tacton_samples  = &tactons.at(current_state->slot).tacton_samples;
 
   if (index_play_next >= tacton_samples->size()) {
     //last sample has been played
@@ -187,7 +188,7 @@ void Sampler::PlaySample(State &current_state) {
 void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
   index_vtp_instruction = 0;
 
-  std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
+  std::vector<TactonSample> *tacton_samples = &tactons.at(slot).tacton_samples;
   TactonSample tacton_sample_previous;
   VTPInstructionV1 instruction;
   VTPInstructionWord encodedInstruction;
@@ -268,7 +269,7 @@ void Sampler::AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, st
 
 
 int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction) {
-  std::vector<TactonSample> *tacton_samples  = &tactons.at(slot).tacton_samples;
+  std::vector<TactonSample> *tacton_samples = &tactons.at(slot).tacton_samples;
   if (index_of_instruction == 0) {
     time_vtp_instruction_milliseconds = 0;
     tacton_samples->clear();
@@ -337,6 +338,13 @@ std::string Sampler::GetTactonListAsString(void) {
     }
   }
   return ss_out.str();
+}
+
+
+int Sampler::GetTactonSizeCurrentSlot(void) {
+  //if (tactons.empty() == true)
+  //  return 0;
+  return tactons.at(current_state->slot).tacton_samples.size();
 }
 
 } // namespace tact

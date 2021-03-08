@@ -24,16 +24,16 @@ class Sampler {
       playing
     };
 
-    Sampler(Peripherals* peripherals);
+    Sampler(Peripherals* peripherals, tact::State *current_state);
 
     void SetState(SamplerState state, bool force_display_update = false);
     void Reset();
     void DeleteTacton(uint8_t slot);
-    void RecordButtonPressed(State &current_state);
+    void RecordButtonPressed();
     void PlayButtonPressed();
     void LoopButtonPressed();
-    void RecordSample(State &current_state);
-    void PlaySample(State &current_state);
+    void RecordSample();
+    void PlaySample();
 
     void ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out);
     void AddVTPInstruction(VTPInstructionWord* encoded_instruction_word, std::vector<uint8_t> &vector_out);
@@ -42,10 +42,12 @@ class Sampler {
      */
     int FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction);
     std::string GetTactonListAsString(void);
+    int GetTactonSizeCurrentSlot(void);
 
   private:
     std::vector<Tacton> tactons;
     Peripherals* peripherals_;
+    tact::State *current_state;
 
     unsigned long time_start_milliseconds = 0;
     uint32_t index_play_next = 0;

@@ -21,6 +21,9 @@ void DataTransfer::SetState(DataState state, std::string line_2, bool force_disp
     switch(state) {
       case DataState::idle: 
         line_1.assign("idle");
+        if ( line_2.empty() == true && sampler_->GetTactonSizeCurrentSlot() == 0) {
+          line_2.assign("empty"); 
+        }
         break;
       case DataState::send:
         line_1.assign("send");
@@ -44,11 +47,19 @@ void DataTransfer::Reset() {
 
 
 void DataTransfer::ReceiveButtonPressed(uint8_t slot) {
+
+  if (connection_confirmed == false) {
+      peripherals_->buzzer.PlayFail();
+      SetState(DataState::idle, "NO CLIENT", true);
+      return;
+  }
+
   if ((slot < 1) || (slot >= TACTONS_COUNT_MAX)) {
     Serial.printf("<Result what=\"ERROR: slot %d not allowed\"/>\n", slot);
     peripherals_->buzzer.PlayFail();
     return;
   }
+
   SetState(DataState::receive, "");
   peripherals_->buzzer.PlayConfirm();
   vector_in.clear();
@@ -61,13 +72,19 @@ void DataTransfer::ReceiveButtonPressed(uint8_t slot) {
 }
 
 
-void DataTransfer::Receive(void) {
-  if (state == DataState::idle) {
+void DataTransfer::Receive(State &current_state) {
+
+  if (connection_confirmed == false) {
     ReceiveIdleMode();
     return;
   }
 
+  if (current_state.mode != tact::Modes::transfer)
+    return;
+
   if (state != DataState::receive) {
+    //drain pending data
+    ReceiveIdleMode();
     return;
   }
 
@@ -289,6 +306,12 @@ void DataTransfer::SendButtonPressed(uint8_t slot) {
   // write incoming data to file as is: (stty raw; cat > tacton.out) < device
   // send file to device: cat file > device
 
+  if (connection_confirmed == false) {
+      peripherals_->buzzer.PlayFail();
+      SetState(DataState::idle, "NO CLIENT", true);
+      return;
+  }
+
   SetState(DataState::send, "");
   peripherals_->buzzer.PlayConfirm();
 
@@ -299,14 +322,14 @@ void DataTransfer::SendButtonPressed(uint8_t slot) {
   // data should have at least one instruction (4 bytes)
   if (data_size < 4) {
     peripherals_->buzzer.PlayFail();
-    SetState(DataState::idle, "");
+    SetState(DataState::idle, "NO DATA");
     return;
   }
 
   // data should have multiple 4 bytes
   if ((data_size%4) != 0) {
     peripherals_->buzzer.PlayFail();
-    SetState(DataState::idle, "");
+    SetState(DataState::idle, "DATA NOK");
     return;
   }
 
@@ -334,9 +357,10 @@ void DataTransfer::SendButtonPressed(uint8_t slot) {
 
 void DataTransfer::Send(void) {
   
-  if (state != DataState::idle)
-    return;
+  //if (state != DataState::idle)
+  //  return;
 
+  // send periodical life sign
   if (connection_confirmed == false &&
       (millis() - time_last_connection_sent >= 1000)) {
     time_last_connection_sent = millis();
