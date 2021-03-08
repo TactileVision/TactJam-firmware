@@ -6,7 +6,8 @@ namespace tact {
 #define COM_SEND (uint8_t)1
 #define COM_RECEIVE (uint8_t)2
 #define COM_CONNECT (uint8_t)3
-#define COM_DEBUG (uint8_t)4
+//#define COM_DEBUG (uint8_t)4
+#define COM_MESSAGE_FOLLOW_UP "\r\n"
 
 DataTransfer::DataTransfer(Peripherals* peripherals, Sampler* sampler) {
     peripherals_ = peripherals;
@@ -119,54 +120,54 @@ void DataTransfer::ReceiveIdleMode(void) {
     string_received.clear();
   }
 
-  if (string_received.find("<GetTactonList/>") != -1) {
-    std::stringstream ss_out;
-    ss_out << "<TactonList slots=\"" << sampler_->GetTactonListAsString().c_str() << "\"/>";
-    Serial.printf("%s\n", ss_out.str().c_str());
-    peripherals_->buzzer.PlayConfirm();
-    string_received.clear();
-  }
+  //if (string_received.find("<GetTactonList/>") != -1) {
+  //  std::stringstream ss_out;
+  //  ss_out << "<TactonList slots=\"" << sampler_->GetTactonListAsString().c_str() << "\"/>";
+  //  Serial.printf("%s\n", ss_out.str().c_str());
+  //  peripherals_->buzzer.PlayConfirm();
+  //  string_received.clear();
+  //}
 
   //<GetTacton slot=”int”/>
-  std::string string_slot = "<SendTacton slot=\"";
-  int index_slot = string_received.find(string_slot);
-  if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
-    int slot = string_received.at(index_slot + string_slot.size()) - 48;
-    #ifdef TACT_DEBUG
-    Serial.printf("DataTransfer::ReceiveIdleMode: SendTacton slot %d requested\n", slot);
-    #endif //TACT_DEBUG
-    SendButtonPressed(slot);
-    string_received.clear();
-  }
+  //std::string string_slot = "<SendTacton slot=\"";
+  //int index_slot = string_received.find(string_slot);
+  //if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
+  //  int slot = string_received.at(index_slot + string_slot.size()) - 48;
+  //  #ifdef TACT_DEBUG
+  //  Serial.printf("DataTransfer::ReceiveIdleMode: SendTacton slot %d requested\n", slot);
+  //  #endif //TACT_DEBUG
+  //  SendButtonPressed(slot);
+  //  string_received.clear();
+  //}
 
   //<ReceiveTacton slot=”int”/>
-  string_slot = "<ReceiveTacton slot=\"";
-  index_slot = string_received.find(string_slot);
-  if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
-    int slot = string_received.at(index_slot + string_slot.size()) - 48;
-    #ifdef TACT_DEBUG
-    Serial.printf("DataTransfer::ReceiveTacton: ReceiveTacton slot %d requested\n", slot);
-    #endif //TACT_DEBUG
-    ReceiveButtonPressed(slot);
-    string_received.clear();
-  }
+  //string_slot = "<ReceiveTacton slot=\"";
+  //index_slot = string_received.find(string_slot);
+  //if ((index_slot != -1) && (string_received.find("/>", index_slot) != -1)) {
+  //  int slot = string_received.at(index_slot + string_slot.size()) - 48;
+  //  #ifdef TACT_DEBUG
+  //  Serial.printf("DataTransfer::ReceiveTacton: ReceiveTacton slot %d requested\n", slot);
+  //  #endif //TACT_DEBUG
+  //  ReceiveButtonPressed(slot);
+  //  string_received.clear();
+  //}
 }
 
 
-std::string DataTransfer::GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/) {
-  if (vector_data.size() < (index + length)) {
-    return "";
-  }
-
-  std::string string_return;
-  for (int i = index; i < index + length; i++) {
-    string_return.push_back(vector_data.at(i));
+//std::string DataTransfer::GetDataAsString(std::vector<uint8_t> &vector_data, int index, int length/*, uint8_t char_stop*/) {
+//  if (vector_data.size() < (index + length)) {
+//    return "";
+//  }
+//
+//  std::string string_return;
+//  for (int i = index; i < index + length; i++) {
+//    string_return.push_back(vector_data.at(i));
     //if ( vector_data.at(i) == char_stop)
     //  break;
-  }
-
-  return string_return;
-}
+//  }
+//
+//  return string_return;
+//}
 
 
 std::string DataTransfer::ProcessReceivedData(void) {
@@ -324,6 +325,7 @@ void DataTransfer::SendButtonPressed(uint8_t slot) {
   for (int i = 0; i < vector_data_out.size(); i++) {
     Serial.write(vector_data_out.at(i));
   }
+  Serial.write(COM_MESSAGE_FOLLOW_UP);
 
   peripherals_->buzzer.PlayConfirm();
   SetState(DataState::idle, "");
@@ -344,6 +346,7 @@ void DataTransfer::Send(void) {
     uint32_t size = out.size();
     Serial.write((byte *)&size, 4);
     Serial.printf("%s", out.c_str());
+    Serial.write(COM_MESSAGE_FOLLOW_UP);
   }
 }
 
