@@ -140,7 +140,14 @@ void DataTransfer::ReceiveIdleMode(void) {
   }
 
 
-  if (string_received.find("granted") != -1) {
+  std::string granted = "000000granted";
+  granted[0] = COM_CONNECT;
+  granted[1] = 0; // slot nb
+  granted[2] = 7; // size
+  granted[3] = 0; // size
+  granted[4] = 0; // size
+  granted[5] = 0; // size
+  if (string_received.find(granted) != -1) {
     peripherals_->buzzer.PlayConfirm();
     connection_confirmed = true;
     string_received.clear();
