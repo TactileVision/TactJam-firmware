@@ -223,7 +223,8 @@ void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
     }
     
     for (uint8_t idx = 0; idx < 8; idx++) {
-      if (((tacton_sample_previous.buttons_state >> idx)%2) != ((tacton_sample->buttons_state >> idx)%2)) {
+      if (((tacton_sample_previous.buttons_state >> idx)%2) != ((tacton_sample->buttons_state >> idx)%2) ||
+       ((((tacton_sample->buttons_state >> idx)%2) == 1) && (tacton_sample_previous.amplitude_percent != tacton_sample->amplitude_percent))) {
         instruction.code = VTP_INST_SET_AMPLITUDE;
         instruction.params.format_b.time_offset = 0;
         instruction.params.format_b.channel_select = idx;

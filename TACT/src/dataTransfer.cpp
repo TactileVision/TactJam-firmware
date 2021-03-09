@@ -206,17 +206,22 @@ std::string DataTransfer::ProcessReceivedData(void) {
   if ((slot == 0) || (slot >= TACTONS_COUNT_MAX))
     return "ERROR 3 : (slot == 0) || (slot >= TACTONS_COUNT_MAX)";
 
-  uint32_t size = *(&vector_in[2]);
+  uint32_t size = *((uint32_t*)&vector_in[2]);
 
   if (size % 4 != 0)
     return "ERROR 4 : size % 4 != 0";
 
-  if (vector_in.size() != 6 + size)
-    return "ERROR 5 : vector_in.size() != 6 + size";
+  #ifdef TACT_DEBUG
+  Serial.printf("DataTransfer::ProcessReceivedData: size=%d\n", size);
+  #endif //TACT_DEBUG
+
+  //if (vector_in.size() != 6 + size)
+  if (vector_in.size() < 6 + size)
+    return "ERROR 5 : vector_in.size() < 6 + size";
 
   unsigned char buffer[4];
   int index_vtp = 0;
-  for (int i = 6; i < vector_in.size(); i+=4) {
+  for (int i = 6; i < 6 + size/*vector_in.size()*/; i+=4) {
     buffer[0] = vector_in.at(i + 0);
     buffer[1] = vector_in.at(i + 1);
     buffer[2] = vector_in.at(i + 2);
@@ -301,7 +306,7 @@ std::string DataTransfer::ProcessReceivedData(void) {
 void DataTransfer::SendButtonPressed(uint8_t slot) {
   //Linux:
   // device: e.g. /dev/ttyUSB0
-  // set serial device to default settings (needed after firmware upload, so no reconnect needed): stty -F <device> sane -echo 115200
+  // set serial device to default settings (needed after firmware upload, so no reconnect needed): stty -F <device> raw 115200
   // show incoming data: cat device
   // write incoming data to file as is: (stty raw; cat > tacton.out) < device
   // send file to device: cat file > device
