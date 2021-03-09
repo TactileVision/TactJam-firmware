@@ -61,6 +61,15 @@ void DataTransfer::ReceiveButtonPressed(uint8_t slot) {
   }
 
   SetState(DataState::receive, "");
+
+  // request currently selected slot to be sent by client
+  Serial.write(COM_RECEIVE);
+  Serial.write(slot);
+  uint32_t size = 0;
+  Serial.write((byte *)&size, 4);
+  //Serial.printf("%s", out.c_str());
+  Serial.write(COM_MESSAGE_FOLLOW_UP);
+
   peripherals_->buzzer.PlayConfirm();
   vector_in.clear();
   time_last_receive = 0;
