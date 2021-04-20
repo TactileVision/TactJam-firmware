@@ -1,59 +1,23 @@
 #include <Arduino.h>
 #include <Adafruit_I2CDevice.h>
 
-#include "config.h"
-#include "mode.h"
-#include "state.h"
-#include "display.h"
-#include "linearEncoder.h"
-#include "rotarySwitch3Pos.h"
-#include "M74HC166.h"
-#include "SN74HC595.h"
-#include "PCA9685.h"
-#include "buzzer.h"
-#include "tactons.h"
+#include <config.h>
+#include <debug.h>
+#include <mode.h>
+#include <state.h>
+#include <peripherals.h>
+#include <sampler.h>
+#include <dataTransfer.h>
 
+tact::Peripherals peripherals;
 tact::State current_state;
 tact::State previous_state;
-tact::Display display;
-tact::LinearEncoder amplitude_encoder(tact::config::esp::pins::kLinearEncoder);
-tact::RotarySwitch3Pos mode_encoder(tact::config::esp::pins::kModeEncoder);
-tact::RotarySwitch3Pos slot_encoder(tact::config::esp::pins::kSlotEncoder);
-tact::M74HC166 buttons(
-  tact::config::esp::pins::kM74HC166Latch,
-  tact::config::esp::pins::kM74HC166Clock,
-  tact::config::esp::pins::kM74HC166Data
-);
-tact::SN74HC595 button_leds(
-  tact::config::esp::pins::kSN74HC595Latch,
-  tact::config::esp::pins::kSN74HC595Clock,
-  tact::config::esp::pins::kSN74HC595Data
-);
-tact::PCA9685 actuator_driver;
-#ifdef __TACT_BUZZER_MULTIPLEXER__
-tact::Buzzer buzzer;
-#else
-tact::Buzzer buzzer(tact::config::esp::pins::kBuzzer);
-#endif
-tact::TactonRecorderPlayer tactonRecorderPlayer(&display, &actuator_driver, &button_leds);
+tact::Sampler sampler(&peripherals, &current_state);
+tact::DataTransfer data_transfer(&peripherals, &sampler);
 
-
-/**
- * @brief 
- * 
- */
+void ReadButtons();
 void HandleJamMode();
-
-/**
- * @brief 
- * 
- */
 void HandleRecPlayMode();
-
-/**
- * @brief 
- * 
- */
 void HandleDataTransferMode();
 
 
@@ -64,97 +28,86 @@ void setup() {
   }
 
   #ifdef TACT_DEBUG
-  Serial.printf("TactJam (TACT %s-%s)\n", GIT_TAG, GIT_REV);
+  tact::debug::debug_stream << "TactJam Tact(" << GIT_TAG << "-" << GIT_REV << ")";
+  tact::debug::println(tact::debug::debug_stream.str());
   #endif //TACT_DEBUG
 
   tact::config::esp::StartI2C();
 
-  amplitude_encoder.Initialize();
-  current_state.amplitude = amplitude_encoder.Get12bit();
-  current_state.amplitude_percent = amplitude_encoder.GetPercent();
-  delay(tact::config::kInitializationDelay);
-  mode_encoder.Initialize();
-  current_state.mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
-  delay(tact::config::kInitializationDelay);
-  slot_encoder.Initialize();
-  current_state.slot = slot_encoder.GetPosition();
-  delay(tact::config::kInitializationDelay);
-  buttons.Initialize();
-  delay(tact::config::kInitializationDelay);
-  button_leds.Initialize();
-  delay(tact::config::kInitializationDelay);
-  button_leds.Update(0);
-  delay(tact::config::kInitializationDelay);
-  actuator_driver.Initialize();
-  delay(tact::config::kInitializationDelay);
-  actuator_driver.Update(0, 0);
-  delay(tact::config::kInitializationDelay);
-  buzzer.Initialize();
-  delay(tact::config::kInitializationDelay);
+  peripherals.Initialize();
+  current_state.amplitude = peripherals.amplitude_encoder.Get12bit();
+  current_state.amplitude_percent = peripherals.amplitude_encoder.GetPercent();
+  current_state.mode = static_cast<tact::Modes>(peripherals.mode_encoder.GetPosition());
+  current_state.slot = peripherals.slot_encoder.GetPosition();
 
-  if (!display.Initialize()) {
-    #ifdef TACT_DEBUG
-    Serial.println("ERROR: display setup");
-    #endif //TACT_DEBUG
-  }
-  
-  display.DrawBootScreen();
-  buzzer.PlayInitSequence();
+  peripherals.display.DrawBootScreen();
+  peripherals.buzzer.PlayInitSequence();
   delay(2000);
 
-  display.DrawMenuScreen(
-    tact::Mode::GetName(static_cast<tact::Modes>(mode_encoder.GetPosition())),
-    slot_encoder.GetPosition(),
-    amplitude_encoder.GetPercent()
+  peripherals.display.DrawMenuScreen(
+    tact::Mode::GetName(static_cast<tact::Modes>(peripherals.mode_encoder.GetPosition())),
+    peripherals.slot_encoder.GetPosition(),
+    peripherals.amplitude_encoder.GetPercent()
   );
   delay(1000);
   
   previous_state = current_state;
+  previous_state.mode = tact::Modes::undefined; //hence mode change will recognised
 
   tact::config::esp::DisableRadios();
 }
 
 
 void loop() {
-  if (mode_encoder.UpdateAvailable()) {
-    current_state.mode = static_cast<tact::Modes>(mode_encoder.GetPosition());
+  if (peripherals.mode_encoder.UpdateAvailable()) {
+    current_state.mode = static_cast<tact::Modes>(peripherals.mode_encoder.GetPosition());
     auto mode_text = tact::Mode::GetName(current_state.mode);
-    display.DrawModeSelection(mode_text);
-  }
-
-  if (slot_encoder.UpdateAvailable()) {
-    // TODO: swop current tacton (#6): https://github.com/TactileVision/TactJam-firmware/issues/6
-    current_state.slot = slot_encoder.GetPosition();
-    display.DrawSlotSelection(current_state.slot);
+    peripherals.display.DrawModeSelection(mode_text);
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.printf("slot: %u\n", current_state.slot);
-    }
+    tact::debug::debug_stream << "mode: " << mode_text.c_str();
+    tact::debug::println(tact::debug::debug_stream.str());
     #endif //TACT_DEBUG
   }
 
-  if (amplitude_encoder.UpdateAvailable()) {
-    current_state.amplitude = amplitude_encoder.Get12bit();
-    current_state.amplitude_percent = amplitude_encoder.GetPercent();
-    display.DrawAmplitude(current_state.amplitude_percent);
+  if (peripherals.slot_encoder.UpdateAvailable()) {
+    current_state.slot = peripherals.slot_encoder.GetPosition();
+    peripherals.display.DrawSlotSelection(current_state.slot);
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.printf("amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
-    }
+    tact::debug::debug_stream << "slot: " << unsigned(current_state.slot);
+    tact::debug::println(tact::debug::debug_stream.str());
     #endif //TACT_DEBUG
   }
 
-  if (current_state.slot != previous_state.slot ||
-    current_state.mode != previous_state.mode) {
-    actuator_driver.Update(0, 0);
-    button_leds.Update(0);
-    display.ClearContentTeaser();
+  if (peripherals.amplitude_encoder.UpdateAvailable()) {
+    current_state.amplitude = peripherals.amplitude_encoder.Get12bit();
+    current_state.amplitude_percent = peripherals.amplitude_encoder.GetPercent();
+    peripherals.display.DrawAmplitude(current_state.amplitude_percent);
+    #ifdef TACT_DEBUG
+    tact::debug::debug_stream << "amplitude: " << unsigned(current_state.amplitude) << "(12bit) " << unsigned(current_state.amplitude_percent) << "(percent)";
+    tact::debug::println(tact::debug::debug_stream.str(), tact::debug::DebugLevel::verbose);
+    #endif //TACT_DEBUG
   }
+
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
+    peripherals.actuator_driver.Update(0, 0);
+    peripherals.button_leds.Update(0);
+    if (current_state.mode == tact::Modes::jam) {
+      const auto fill = String("/\\/\\/\\/\\/\\");
+      peripherals.display.DrawContentTeaserDoubleLine(fill, fill);
+    }
+    else {
+      peripherals.display.ClearContentTeaser();
+    }
+  }
+
+  // needed to be located here to listen for message asking and anwering by message granting
+  data_transfer.Receive(current_state);
+  data_transfer.Send();
 
   switch (current_state.mode) {
     case tact::Modes::undefined :
       #ifdef TACT_DEBUG
-      Serial.println("device is in an undefined mode");
+      tact::debug::println("device is in an undefined mode");
       #endif //TACT_DEBUG
       break;
     case tact::Modes::jam :
@@ -171,39 +124,36 @@ void loop() {
   previous_state = current_state;
 }
 
+
 void ReadButtons() {
-  if (buttons.UpdateAvailable()) {
-    current_state.pressed_buttons = buttons.Read();
+  if (peripherals.buttons.UpdateAvailable()) {
+    current_state.pressed_buttons = peripherals.buttons.Read();
     current_state.pressed_actuator_buttons = current_state.pressed_buttons >> 8u;
     current_state.pressed_menu_buttons = (current_state.pressed_buttons >> 5u) & 0x7u;
   
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-        Serial.print("active actuator buttons BIN: ");
-        Serial.print(current_state.pressed_actuator_buttons, BIN);
-        Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
-      }
-  
-      if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-        Serial.print("active menu buttons BIN: ");
-        Serial.println(current_state.pressed_menu_buttons, BIN);
-      }
-    }
+    tact::debug::debug_stream << "active actuator buttons: " << unsigned(current_state.pressed_actuator_buttons) << "\tactive menu buttons: " << unsigned(current_state.pressed_actuator_buttons);
+    tact::debug::println(tact::debug::debug_stream.str(), tact::debug::DebugLevel::verbose);
     #endif //TACT_DEBUG
   }
 }
 
+
 void HandleJamMode() {
   ReadButtons();
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    button_leds.Update(current_state.pressed_actuator_buttons);
-    actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
-    current_state.pressed_actuator_buttons = current_state.pressed_actuator_buttons;
+    peripherals.button_leds.Update(current_state.pressed_actuator_buttons);
+    peripherals.actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
   }
 
   if (previous_state.amplitude_percent != current_state.amplitude_percent) {
-    actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+    peripherals.actuator_driver.Update(current_state.pressed_actuator_buttons, current_state.amplitude);
+  }
+
+  if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
+    if (previous_state.pressed_menu_buttons != 0) {
+      peripherals.buzzer.PlayFail();
+    }
   }
 
   // TODO: check if delay is needed
@@ -213,42 +163,34 @@ void HandleJamMode() {
 
 void HandleRecPlayMode() {
   // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
-  // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
   ReadButtons();
 
-  if (current_state.slot != previous_state.slot ||
-    current_state.mode != previous_state.mode) {
-    tactonRecorderPlayer.Reset();
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
+    sampler.Reset();
   }
 
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+    if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed, start record
-      tactonRecorderPlayer.RecordButtonPressed(current_state, buzzer);
+      sampler.RecordButtonPressed();
     }
-    if ( (previous_state.pressed_menu_buttons & 2) == 2) {
-      //menu button 1 pressed, start record
-      tactonRecorderPlayer.PlayButtonPressed(buzzer);
+    if ((previous_state.pressed_menu_buttons & 2) == 2) {
+      //menu button 2 pressed, play
+      sampler.PlayButtonPressed();
     }
-    if ( (previous_state.pressed_menu_buttons & 1) == 1) {
+    if ((previous_state.pressed_menu_buttons & 1) == 1) {
       //menu button 3 pressed, switch loop
-      tactonRecorderPlayer.LoopButtonPressed(buzzer);
+      sampler.LoopButtonPressed();
     }
   }
 
   if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-    tactonRecorderPlayer.RecordSample(current_state, buzzer);
+    sampler.RecordSample();
   }
-  if (previous_state.amplitude != current_state.amplitude &&
-    current_state.pressed_actuator_buttons != 0) {
-    tactonRecorderPlayer.RecordSample(current_state, buzzer);
+  if ((previous_state.amplitude != current_state.amplitude) && (current_state.pressed_actuator_buttons != 0)) {
+    sampler.RecordSample();
   }
-  tactonRecorderPlayer.PlaySample(current_state, buzzer, amplitude_encoder);
-
-
-  //#ifdef TACT_DEBUG
-  //Serial.println("Record and Play Mode is not implemented yet");
-  //#endif //TACT_DEBUG
+  sampler.PlaySample();
 
   // TODO: check if delay is needed
   delay(2);
@@ -256,19 +198,26 @@ void HandleRecPlayMode() {
 
 
 void HandleDataTransferMode() {
-  // TODO: receive tacton from PC (#7): https://github.com/TactileVision/TactJam-firmware/issues/7
-  // TODO: send tacton to PC (#8): https://github.com/TactileVision/TactJam-firmware/issues/8
   ReadButtons();
+
+  if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
+    data_transfer.Reset();
+  }
+
   if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-    if ( (previous_state.pressed_menu_buttons & 4) == 4) {
+    if ((previous_state.pressed_menu_buttons & 4) == 4) {
       //menu button 1 pressed
-      buzzer.PlayConfirm();
-      tactonRecorderPlayer.ToVTP(current_state.slot);
-      buzzer.PlayConfirm();
+      data_transfer.SendButtonPressed(current_state.slot);
+    }
+    if ((previous_state.pressed_menu_buttons & 2) == 2) {
+      //menu button 2 pressed
+      data_transfer.ReceiveButtonPressed(current_state.slot);
     }
   }
-  #ifdef TACT_DEBUG
-  //Serial.println("Transfer Mode is not implemented yet");
-  #endif //TACT_DEBUG
+
+  //moved to void loop()
+  //data_transfer.Receive();
+  //data_transfer.Send();
+
   delay(2);
 }
