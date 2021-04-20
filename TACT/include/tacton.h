@@ -4,6 +4,9 @@
 #include <vector>
 #include <Arduino.h>
 
+#include "debug.h"
+
+
 namespace tact {
 
 struct TactonSample {
@@ -12,9 +15,10 @@ struct TactonSample {
   uint8_t amplitude_percent = 0;
 
   void SerialPrint() {
-    Serial.printf("TactonSample: time_milliseconds=%d  buttons_state=", time_milliseconds);
-    Serial.print(buttons_state, BIN);
-    Serial.printf("  amplitude=%d\n", amplitude_percent);
+    #ifdef TACT_DEBUG
+    debug::debug_stream << "TactonSample: time_milliseconds=" << time_milliseconds << "  buttons_state=" << unsigned(buttons_state) << "  amplitude=" << unsigned(amplitude_percent);
+    debug::println(debug::debug_stream.str(), debug::DebugLevel::verbose);
+    #endif //TACT_DEBUG
   }
 };
 

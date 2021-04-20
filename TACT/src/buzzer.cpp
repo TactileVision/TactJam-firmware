@@ -1,4 +1,5 @@
 #include "buzzer.h"
+#include "debug.h"
 
 #ifndef __TACT_BUZZER_MULTIPLEXER__
 #include <Tone32.h>
@@ -56,6 +57,10 @@ void Buzzer::Tone(uint32_t length) {
 
 
 void Buzzer::PlayInitSequence() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+
   Tone(100);
   NoTone(50);
   Tone(100);
@@ -65,11 +70,19 @@ void Buzzer::PlayInitSequence() {
 }
 
 void Buzzer::PlayConfirm() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+
   Tone(50);
   NoTone(10);
 }
 
 void Buzzer::PlaySuccess() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   Tone(50);
   NoTone(20);
   Tone(50);
@@ -77,6 +90,10 @@ void Buzzer::PlaySuccess() {
 }
 
 void Buzzer::PlayFail() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   Tone(100);
   NoTone(20);
   Tone(200);
@@ -98,6 +115,10 @@ void Buzzer::Initialize() {
 
 
 void Buzzer::PlayInitSequence() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   tone(pin_, NOTE_C4, 60, pwm_channel_);
   noTone(pin_, pwm_channel_);
   tone(pin_, NOTE_E4, 60, pwm_channel_);
@@ -120,12 +141,20 @@ void Buzzer::PlayInitSequence() {
 
 
 void Buzzer::PlayConfirm() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   tone(pin_, NOTE_C4, 100, pwm_channel_);
   noTone(pin_, pwm_channel_);
 }
 
 
 void Buzzer::PlayFail() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   tone(pin_, NOTE_C3, 100, pwm_channel_);
   noTone(pin_, pwm_channel_);
   tone(pin_, NOTE_C2, 200, pwm_channel_);
@@ -134,6 +163,10 @@ void Buzzer::PlayFail() {
 
 
 void Buzzer::PlaySuccess() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
+  #endif //TACT_DEBUG
+  
   tone(pin_, NOTE_C4, 100, pwm_channel_);
   noTone(pin_, pwm_channel_);
   tone(pin_, NOTE_E4, 100, pwm_channel_);

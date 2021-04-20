@@ -28,7 +28,6 @@ class Sampler {
 
     void SetState(SamplerState state, bool force_display_update = false);
     void Reset();
-    void DeleteTacton(uint8_t slot);
     void RecordButtonPressed();
     void PlayButtonPressed();
     void LoopButtonPressed();
@@ -41,7 +40,6 @@ class Sampler {
      *  @param index_of_instruction used for initialisation if index is 0 and may be used for debugging
      */
     int FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word, uint32_t index_of_instruction);
-    std::string GetTactonListAsString(void);
     int GetTactonSizeCurrentSlot(void);
 
   private:

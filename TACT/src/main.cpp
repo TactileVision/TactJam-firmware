@@ -2,6 +2,7 @@
 #include <Adafruit_I2CDevice.h>
 
 #include <config.h>
+#include <debug.h>
 #include <mode.h>
 #include <state.h>
 #include <peripherals.h>
@@ -27,7 +28,8 @@ void setup() {
   }
 
   #ifdef TACT_DEBUG
-  Serial.printf("TactJam (TACT %s-%s)\n", GIT_TAG, GIT_REV);
+  tact::debug::debug_stream << "TactJam Tact(" << GIT_TAG << "-" << GIT_REV << ")";
+  tact::debug::println(tact::debug::debug_stream.str());
   #endif //TACT_DEBUG
 
   tact::config::esp::StartI2C();
@@ -61,16 +63,18 @@ void loop() {
     current_state.mode = static_cast<tact::Modes>(peripherals.mode_encoder.GetPosition());
     auto mode_text = tact::Mode::GetName(current_state.mode);
     peripherals.display.DrawModeSelection(mode_text);
+    #ifdef TACT_DEBUG
+    tact::debug::debug_stream << "mode: " << mode_text.c_str();
+    tact::debug::println(tact::debug::debug_stream.str());
+    #endif //TACT_DEBUG
   }
 
   if (peripherals.slot_encoder.UpdateAvailable()) {
-    // TODO: swop current tacton (#6): https://github.com/TactileVision/TactJam-firmware/issues/6
     current_state.slot = peripherals.slot_encoder.GetPosition();
     peripherals.display.DrawSlotSelection(current_state.slot);
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.printf("slot: %u\n", current_state.slot);
-    }
+    tact::debug::debug_stream << "slot: " << unsigned(current_state.slot);
+    tact::debug::println(tact::debug::debug_stream.str());
     #endif //TACT_DEBUG
   }
 
@@ -79,9 +83,8 @@ void loop() {
     current_state.amplitude_percent = peripherals.amplitude_encoder.GetPercent();
     peripherals.display.DrawAmplitude(current_state.amplitude_percent);
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel == tact::config::DebugLevel::verbose) {
-      Serial.printf("amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
-    }
+    tact::debug::debug_stream << "amplitude: " << unsigned(current_state.amplitude) << "(12bit) " << unsigned(current_state.amplitude_percent) << "(percent)";
+    tact::debug::println(tact::debug::debug_stream.str(), tact::debug::DebugLevel::verbose);
     #endif //TACT_DEBUG
   }
 
@@ -104,7 +107,7 @@ void loop() {
   switch (current_state.mode) {
     case tact::Modes::undefined :
       #ifdef TACT_DEBUG
-      Serial.println("device is in an undefined mode");
+      tact::debug::println("device is in an undefined mode");
       #endif //TACT_DEBUG
       break;
     case tact::Modes::jam :
@@ -129,18 +132,8 @@ void ReadButtons() {
     current_state.pressed_menu_buttons = (current_state.pressed_buttons >> 5u) & 0x7u;
   
     #ifdef TACT_DEBUG
-    if (tact::config::kDebugLevel >= tact::config::DebugLevel::verbose) {
-      if (previous_state.pressed_actuator_buttons != current_state.pressed_actuator_buttons) {
-        Serial.print("active actuator buttons BIN: ");
-        Serial.print(current_state.pressed_actuator_buttons, BIN);
-        Serial.printf("\t amplitude: %u(12bit) %u(percent)\n", current_state.amplitude, current_state.amplitude_percent);
-      }
-  
-      if (previous_state.pressed_menu_buttons != current_state.pressed_menu_buttons) {
-        Serial.print("active menu buttons BIN: ");
-        Serial.println(current_state.pressed_menu_buttons, BIN);
-      }
-    }
+    tact::debug::debug_stream << "active actuator buttons: " << unsigned(current_state.pressed_actuator_buttons) << "\tactive menu buttons: " << unsigned(current_state.pressed_actuator_buttons);
+    tact::debug::println(tact::debug::debug_stream.str(), tact::debug::DebugLevel::verbose);
     #endif //TACT_DEBUG
   }
 }
@@ -170,7 +163,6 @@ void HandleJamMode() {
 
 void HandleRecPlayMode() {
   // TODO: amplitude modulation after recording (#10): https://github.com/TactileVision/TactJam-firmware/issues/10
-  // TODO: delete current tacton (#12): https://github.com/TactileVision/TactJam-firmware/issues/12
   ReadButtons();
 
   if ((current_state.slot != previous_state.slot) || (current_state.mode != previous_state.mode)) {
@@ -199,11 +191,6 @@ void HandleRecPlayMode() {
     sampler.RecordSample();
   }
   sampler.PlaySample();
-
-
-  //#ifdef TACT_DEBUG
-  //Serial.println("Record and Play Mode is not implemented yet");
-  //#endif //TACT_DEBUG
 
   // TODO: check if delay is needed
   delay(2);

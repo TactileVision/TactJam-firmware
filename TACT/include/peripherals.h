@@ -2,6 +2,7 @@
 #define _TACT_PERIPHERALS_
 
 #include "config.h"
+#include "debug.h"
 #include "mode.h"
 #include "state.h"
 #include "display.h"
@@ -58,7 +59,7 @@ struct Peripherals {
     delay(tact::config::kInitializationDelay);
     if (!display.Initialize()) {
       #ifdef TACT_DEBUG
-      Serial.println("ERROR: display setup");
+      debug::println(__FILE__, __func__, "ERROR");
       #endif //TACT_DEBUG
     }
   }

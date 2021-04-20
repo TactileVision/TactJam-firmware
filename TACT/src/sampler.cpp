@@ -1,5 +1,6 @@
-#include <sampler.h>
 #include <sstream>
+#include <sampler.h>
+#include <debug.h>
 
 namespace tact {
   
@@ -42,20 +43,15 @@ void Sampler::SetState(SamplerState state, bool force_display_update) {
 void Sampler::Reset()  {
   SetState(SamplerState::idle, true);
   #ifdef TACT_DEBUG
-  Serial.print("TactonRecorderPlayer::Reset\n");
+  debug::println(__FILE__, __func__, "", debug::DebugLevel::verbose);
   #endif //TACT_DEBUG
 }
 
 
-//void Sampler::DeleteTacton(uint8_t slot) {
-//  if (slot > TACTONS_COUNT_MAX) {
-//    return;
-//  }
-//  tactons.at(slot).tacton_samples.clear();
-//}
-
-
 void Sampler::RecordButtonPressed() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "");
+  #endif //TACT_DEBUG
   peripherals_->actuator_driver.Update(0, 0);
   peripherals_->button_leds.Update(0);
   if (state == SamplerState::recording) {
@@ -69,14 +65,13 @@ void Sampler::RecordButtonPressed() {
   SetState(SamplerState::recording);
 
   peripherals_->buzzer.PlayConfirm();
-
-  #ifdef TACT_DEBUG
-  Serial.printf("TactonRecorderPlayer::RecordButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
-  #endif //TACT_DEBUG
 }
 
 
 void Sampler::PlayButtonPressed() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "");
+  #endif //TACT_DEBUG
   peripherals_->actuator_driver.Update(0, 0);
   peripherals_->button_leds.Update(0);
   if (state == SamplerState::playing) {
@@ -88,14 +83,13 @@ void Sampler::PlayButtonPressed() {
   time_start_milliseconds = millis();
   SetState(SamplerState::playing);
   index_play_next = 0;
-
-  #ifdef TACT_DEBUG
-  Serial.printf("TactonRecorderPlayer::PlayButtonPressed(): time_start_milliseconds=%ld\n", time_start_milliseconds);
-  #endif //TACT_DEBUG
 }
 
 
 void Sampler::LoopButtonPressed() {
+  #ifdef TACT_DEBUG
+  debug::println(__FILE__, __func__, "");
+  #endif //TACT_DEBUG
   //if (state != State::playing)
   //  return;
   loop_playback = !loop_playback;
@@ -178,7 +172,8 @@ void Sampler::PlaySample() {
     peripherals_->actuator_driver.Update(tacton_latest->buttons_state, peripherals_->amplitude_encoder.PercentToLinearEncoder(tacton_latest->amplitude_percent));
     peripherals_->button_leds.Update(tacton_latest->buttons_state);
     #ifdef TACT_DEBUG
-    Serial.printf("sample %d/%d: ", index_play_next, tacton_samples->size());
+    debug::debug_stream << "sample " << index_play_next << "/" << tacton_samples->size();
+    debug::println(__func__, debug::debug_stream.str(), debug::DebugLevel::verbose);
     tacton_latest->SerialPrint();
     #endif //TACT_DEBUG
   }
@@ -197,10 +192,9 @@ void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
     TactonSample *tacton_sample = &tacton_samples->at(i);
 
     #ifdef TACT_DEBUG
-    if (config::kDebugLevel >= config::DebugLevel::verbose) {
-      Serial.printf("ToVTP sample %d/%d: ", i + 1, tacton_samples->size());
-      tacton_sample->SerialPrint();
-    }
+    debug::debug_stream << "sample " << (i + 1) << "/" << tacton_samples->size();
+    debug::println(__func__, debug::debug_stream.str(), debug::DebugLevel::verbose);
+    tacton_sample->SerialPrint();
     #endif //TACT_DEBUG
 
     uint32_t time_diff = tacton_sample->time_milliseconds - tacton_sample_previous.time_milliseconds;
@@ -209,13 +203,13 @@ void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
       instruction.params.format_a.parameter_a = time_diff;
 
       #ifdef TACT_DEBUG
-      if (config::kDebugLevel >= config::DebugLevel::verbose)
-        Serial.printf("  VTP_INST_INCREMENT_TIME parameter_a=%ld\n", instruction.params.format_a.parameter_a);
+      debug::debug_stream << "VTP_INST_INCREMENT_TIME parameter_a=" << instruction.params.format_a.parameter_a;
+      debug::println(debug::debug_stream.str(), debug::DebugLevel::verbose);
       #endif //TACT_DEBUG
 
       if (vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK ) {
         #ifdef TACT_DEBUG
-        Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
+        debug::println(__func__, "ERROR: vtp_encode_instruction_v1 != VTP_OK");
         #endif //TACT_DEBUG
         return;
       }
@@ -231,13 +225,13 @@ void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
         instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? (tacton_sample->amplitude_percent * 10) : 0;
       
         #ifdef TACT_DEBUG
-        if (config::kDebugLevel >= config::DebugLevel::verbose)
-          Serial.printf("  VTP_INST_SET_AMPLITUDE time_offset=%d  channel_select=%d  parameter_a=%d\n", instruction.params.format_b.time_offset, instruction.params.format_b.channel_select, instruction.params.format_b.parameter_a);
+        debug::debug_stream << "VTP_INST_SET_AMPLITUDE time_offset=" << instruction.params.format_b.time_offset << "  channel_select=" << instruction.params.format_b.channel_select << "  parameter_a=" << instruction.params.format_b.parameter_a;
+        debug::println(debug::debug_stream.str(), debug::DebugLevel::verbose);
         #endif //TACT_DEBUG
 
         if (vtp_encode_instruction_v1(&instruction, &encodedInstruction) != VTP_OK) {
           #ifdef TACT_DEBUG
-          Serial.printf("vtp_encode_instruction_v1 != VTP_OK\n");
+          debug::println(__func__, "ERROR: vtp_encode_instruction_v1 != VTP_OK");
           #endif //TACT_DEBUG
           return;
         }
@@ -280,7 +274,7 @@ int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word,
   if (vtp_decode_instruction_v1(*encoded_instruction_word, &instruction) != VTP_OK) {
     tacton_samples->clear();
     #ifdef TACT_DEBUG
-    Serial.printf("ERROR: vtp_decode_instruction_v1 != VTP_OK\n");
+    debug::println(__func__, "ERROR: vtp_decode_instruction_v1 != VTP_OK");
     #endif //TACT_DEBUG
     return -1;
   }
@@ -312,39 +306,22 @@ int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word,
   else {
     tacton_samples->clear();
     #ifdef TACT_DEBUG
-    Serial.printf("ERROR: instruction.code not implemented\n");
+    debug::println(__func__, "ERROR: instruction.code not implemented");
     #endif //TACT_DEBUG
     return -2;
   }
   
   #ifdef TACT_DEBUG
-  if (config::kDebugLevel >= config::DebugLevel::verbose) {
-    Serial.printf(" FromVTP sample %d: ", tacton_samples->size());
-    tacton_samples->at(tacton_samples->size()-1).SerialPrint();
-  }
+  debug::debug_stream << "FromVTP sample: " << tacton_samples->size();
+  debug::println(debug::debug_stream.str(), debug::DebugLevel::verbose);
+  tacton_samples->at(tacton_samples->size()-1).SerialPrint();
   #endif //TACT_DEBUG
 
   return 0;
 }
 
 
-std::string Sampler::GetTactonListAsString(void) {
-  std::ostringstream ss_out;
-  for (int i = 0; i < tactons.size(); i++) {
-    if (tactons.at(i).tacton_samples.size() > 0) {
-      if (ss_out.str().empty() == false) {
-        ss_out << ",";
-      }
-      ss_out << i;
-    }
-  }
-  return ss_out.str();
-}
-
-
 int Sampler::GetTactonSizeCurrentSlot(void) {
-  //if (tactons.empty() == true)
-  //  return 0;
   return tactons.at(current_state->slot).tacton_samples.size();
 }
 
