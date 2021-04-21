@@ -221,7 +221,7 @@ void Sampler::ToVTP(uint8_t slot, std::vector<uint8_t> &vector_out) {
        ((((tacton_sample->buttons_state >> idx)%2) == 1) && (tacton_sample_previous.amplitude_percent != tacton_sample->amplitude_percent))) {
         instruction.code = VTP_INST_SET_AMPLITUDE;
         instruction.params.format_b.time_offset = 0;
-        instruction.params.format_b.channel_select = idx;
+        instruction.params.format_b.channel_select = uint8_t(7) - idx;
         instruction.params.format_b.parameter_a = ((tacton_sample->buttons_state >> idx)%2) == 1 ? (tacton_sample->amplitude_percent * 10) : 0;
       
         #ifdef TACT_DEBUG
@@ -296,10 +296,10 @@ int Sampler::FromVTP(uint8_t slot, VTPInstructionWord* encoded_instruction_word,
     uint8_t button = instruction.params.format_b.channel_select;
     uint16_t amplitude = instruction.params.format_b.parameter_a;
     if (amplitude == 0) {
-      tacton_sample->buttons_state &= ~(1 << button);
+      tacton_sample->buttons_state &= ~(1 << (7-button));
     }
     else {
-      tacton_sample->buttons_state |= (1 << button);
+      tacton_sample->buttons_state |= (1 << (7-button));
       tacton_sample->amplitude_percent = amplitude / 10;
     }
   }
