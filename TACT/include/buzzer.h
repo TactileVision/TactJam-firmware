@@ -23,75 +23,23 @@ class Buzzer {
     bool initialized_;
     
   public:
-#ifdef __TACT_BUZZER_MULTIPLEXER__
+    #ifdef __TACT_BUZZER_MULTIPLEXER__
     Buzzer();
     ~Buzzer();
 
-    /**
-     * @brief 
-     * 
-     */
-    void Initialize();
-
-    /**
-     * @brief 
-     * 
-     * @param length 
-     */
     void NoTone(uint32_t length);
-
-    /**
-     * @brief 
-     * 
-     * @param length 
-     */
     void Tone(uint32_t length);
-
-    /**
-     * @brief 
-     * 
-     */
-    void PlayInitSequence();
-
-    void PlayConfirm();
-
-    void PlayFail();
-#else
+    #else
     Buzzer() = delete;
     Buzzer(uint8_t pin, uint8_t pwm_channel = 0);
     ~Buzzer() = default;
+    #endif //__TACT_BUZZER_MULTIPLEXER__
 
-    /**
-     * @brief 
-     * 
-     */
     void Initialize();
-
-    /**
-     * @brief 
-     * 
-     * @param length 
-     */
-    void NoTone(uint32_t length);
-
-    /**
-     * @brief 
-     * 
-     * @param frequency 
-     * @param length 
-     */
-    void Tone(double frequency, uint32_t length);
-
-    /**
-     * @brief 
-     * 
-     */
     void PlayInitSequence();
-
     void PlayConfirm();
-
     void PlayFail();
-#endif //__TACT_BUZZER_MULTIPLEXER__
+    void PlaySuccess();
 };
 
 }

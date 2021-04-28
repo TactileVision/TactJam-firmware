@@ -3,17 +3,10 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "debug.h"
 
 namespace tact {
 namespace config {
-
-#ifdef TACT_DEBUG
-enum class DebugLevel {
-  basic,
-  verbose
-};
-const auto kDebugLevel = (TACT_DEBUG == 1) ? DebugLevel::basic : DebugLevel::verbose;
-#endif //TACT_DEBUG
 
 const auto kSerialBaudRate = 115200;
 const uint8_t kInitializationDelay = 20;
@@ -24,7 +17,7 @@ const uint8_t kERMOverdriveDuration = 20;
 #if TACT_BOARD_REV==0
 #define __TACT_BUZZER_MULTIPLEXER__
 const uint8_t kBuzzerID = 8;
-#endif //TACT_BOARD_RE
+#endif //TACT_BOARD_REV
 
 #if TACT_BOARD_REV==0
 const uint8_t kActuatorMapping[] = {0,1,2,3,4,5,6,7};
@@ -77,7 +70,8 @@ inline void StartI2C() {
     
   }
   #ifdef TACT_DEBUG
-  Serial.printf("start I2C bus with %uHz\n", Wire.getClock());
+  debug::debug_stream << "start I2C bus with " << Wire.getClock() << "Hz";
+  debug::println(debug::debug_stream.str());
   #endif //TACT_DEBUG
 }
 

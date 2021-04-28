@@ -28,6 +28,11 @@ void PCA9685::Initialize() {
   pwm_driver_->setPWMFreq(frequency_);
   initialized_ = true;
   active_positions_old = 0;
+  delay(config::kInitializationDelay);
+  for (uint8_t pin=0; pin<16; pin++) {
+    pwm_driver_->setPWM(pin, 0, 0);
+  }
+  delay(config::kInitializationDelay);
 }
 
 
@@ -36,8 +41,8 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
     Initialize();
   }
   if (active_positions == 0 || amplitude == 0) {
-    for (uint8_t idx = 0; idx < 8; idx++) {
-      pwm_driver_->setPWM(config::kActuatorMapping[7-idx], 0, 0);
+    for (uint8_t idx = 0; idx < 16; idx++) {
+      pwm_driver_->setPWM(idx, 0, 0);
     }
     active_positions_old = active_positions;
     return;
@@ -53,8 +58,9 @@ void PCA9685::Update(uint8_t active_positions, uint16_t amplitude, bool enable_o
     }
     // TODO delay may interfer with the control flow
     // find a better solution
-    if ( overdrive_activated == true )
+    if (overdrive_activated == true) {
       delay(config::kERMOverdriveDuration);
+    }
   }
   for (uint8_t idx = 0; idx < 8; idx++) {
     if (((active_positions >> idx)%2) == 0) {
