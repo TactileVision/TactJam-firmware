@@ -1,5 +1,7 @@
 # TactJam-firmware
 
+![TactJam setup](https://github.com/TactileVision/TactJam-firmware/wiki/img/TactJam-Teaser.jpg)
+
 TactJam is a collaborative playground for composing spatial tactons. The project is split into the following repositories:
 
 + Hardware interface: [https://github.com/TactileVision/TactJam-hardware](https://github.com/TactileVision/TactJam-hardware)
